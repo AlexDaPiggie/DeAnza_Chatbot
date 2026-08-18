@@ -1,0 +1,38 @@
+name: Quaterly Data Refresh
+
+on:
+  schedule:
+    #Runs at 00:00 UTC time on 1st of Sep, Jan, April, and June
+    - cron: '0 0 1 1,4,6,9 *'
+  workflow_dispatch: #Allows manual trigger button in github
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+        
+      - name: Install Dependencies
+        run: | 
+          pip install -r requirements.txt
+        
+      - name: Run Scraper & Differential Ingest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m scrapers.pipeline
+        
+      - name: Commit Updated Data Snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): auto-update quaterly snapshots" && git push)

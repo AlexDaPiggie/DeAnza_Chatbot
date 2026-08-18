@@ -1,0 +1,26 @@
+:root {
+  /* De Anza Brand & Palette Tokens */
+  --primary: #800000;
+  --primary-hover: #6a0000;
+  --primary-light: #fbf0f0;
+  --primary-border: rgba(128, 0, 0, 0.15);
+
+  /* Neutrals & Surfaces */
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+
+  /* Message Bubbles */
+  --user-bubble: #800000;
+  --user-text: #ffffff;
+  --bot-bubble: #ffffff;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

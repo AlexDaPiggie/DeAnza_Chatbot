@@ -9,6 +9,7 @@ from core.embed import embed_batch
 from scrapers.catalog import scrape_catalog
 from scrapers.schedule import scrape_schedule
 from scrapers.pages import scrape_catalog_pages
+from scrapers.deanza_web import scrape_deanza_web
 
 
 def compute_hash(text: str):
@@ -22,6 +23,7 @@ def run_pipeline():
     courses = scrape_catalog()
     pages = scrape_catalog_pages()
     schedule = scrape_schedule()
+    deanza_web_pages = scrape_deanza_web()
 
     assert len(courses) > 100, f"Error: Scraped courses count too low ({len(courses)})"
     assert len(pages) > 10, f"Error: Scraped page count too low ({len(pages)})"
@@ -33,6 +35,8 @@ def run_pipeline():
         json.dump(pages, f, indent=2)
     with open("data/schedule.json", "w", encoding="utf-8") as f:
         json.dump(schedule, f, indent=2)
+    with open("data/deanza_web_pages.json", "w", encoding="utf-8") as f:
+        json.dump(deanza_web_pages, f, indent=2)
     print("Saved snapshots to data/ folder.")
 
     # Convert all sources to Chunks
@@ -41,6 +45,8 @@ def run_pipeline():
         raw_chunks.extend(chunk_page(p))
     for s in schedule:
         raw_chunks.append(chunk_section(s))
+    for dp in deanza_web_pages:
+        raw_chunks.extend(chunk_page(dp))
 
     unique_chunks = {}
     for ch in raw_chunks:

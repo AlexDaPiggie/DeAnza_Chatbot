@@ -20,6 +20,7 @@ let chatHistory = [];
 
 function askQuestion(text) {
   inputBox.value = text;
+  autoResizeInput();
   inputForm.dispatchEvent(new Event("submit"));
 }
 
@@ -61,6 +62,23 @@ function appendMessage(role, text) {
   return msg;
 }
 
+// Auto-expanding textarea capped at 25% viewport height
+function autoResizeInput() {
+  inputBox.style.height = "auto";
+  const maxHeight = window.innerHeight * 0.25;
+  const newHeight = Math.min(Math.max(inputBox.scrollHeight, 44), maxHeight);
+  inputBox.style.height = newHeight + "px";
+}
+
+inputBox.addEventListener("input", autoResizeInput);
+
+inputBox.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    inputForm.dispatchEvent(new Event("submit"));
+  }
+});
+
 inputForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const query = inputBox.value.trim();
@@ -68,6 +86,7 @@ inputForm.addEventListener("submit", async (e) => {
 
   appendMessage("user", query);
   inputBox.value = "";
+  inputBox.style.height = "44px";
   sendBtn.disabled = true;
 
   const botMsgDiv = appendMessage("bot", "Searching catalog & schedule...");

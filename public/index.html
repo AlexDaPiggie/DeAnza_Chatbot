@@ -211,18 +211,23 @@
       margin: 0 auto;
       display: flex;
       gap: 10px;
-      align-items: center;
+      align-items: flex-end;
     }
 
     #input-box {
       flex: 1;
-      padding: 12px 16px;
+      padding: 11px 16px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.95rem;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.2s ease;
+      resize: none;
+      line-height: 1.5;
+      min-height: 44px;
+      max-height: 25vh;
+      overflow-y: auto;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     #input-box:focus {
@@ -231,15 +236,19 @@
     }
 
     #send-btn {
-      padding: 12px 20px;
+      padding: 11px 20px;
       background-color: var(--primary);
       color: #ffffff;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.95rem;
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: background-color 0.15s ease;
     }
 
@@ -283,18 +292,17 @@
 
   <div class="footer-container">
     <form id="input-form">
-      <input 
+      <textarea 
         id="input-box" 
-        type="text" 
+        rows="1" 
         placeholder="Ask a question (e.g. What are prerequisites for MATH 1A?)..." 
-        autocomplete="off" 
-        required 
-      />
+        required
+      ></textarea>
       <button id="send-btn" type="submit">Send</button>
     </form>
     <div class="disclaimer">De Anza AI Assistant answers using official published college catalog & schedule data.</div>
   </div>
 
-  <script src="/app.js?v=6"></script>
+  <script src="/app.js?v=7"></script>
 </body>
 </html>

@@ -36,6 +36,11 @@ button {
   height: 100dvh;
 }
 
+.mobile-topbar,
+.mobile-menu-backdrop {
+  display: none;
+}
+
 .side-rail {
   display: flex;
   flex-direction: column;
@@ -193,7 +198,7 @@ button {
 
 @media (max-width: 900px) {
   body {
-    overflow-y: auto;
+    overflow: hidden;
   }
 
   .app-shell {
@@ -201,30 +206,59 @@ button {
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
-    height: auto;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .mobile-topbar {
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body.mobile-menu-open .mobile-menu-backdrop {
+    pointer-events: auto;
   }
 
   .side-rail {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 30;
+    left: 0;
+    z-index: 45;
+    width: min(290px, 82vw);
+    height: 100vh;
+    height: 100dvh;
     gap: 14px;
-    padding: 14px 16px 10px;
-    border-right: 0;
+    padding: 18px 14px;
+    border-right: 1px solid var(--border);
     border-bottom: 0;
-    background: transparent;
-    backdrop-filter: none;
+    background: var(--rail-bg);
+    backdrop-filter: blur(18px);
+    transform: translateX(-105%);
     transition: transform 0.28s ease, margin-bottom 0.28s ease, background-color 0.24s ease, border-color 0.24s ease;
   }
 
-  .side-rail.mobile-nav-hidden {
-    transform: translateY(-100%);
+  body.mobile-menu-open .side-rail {
+    transform: translateX(0);
   }
 
   .content-shell {
     min-height: 0;
-    height: calc(100vh - 116px);
-    height: calc(100dvh - 116px);
+    height: calc(100vh - 62px);
+    height: calc(100dvh - 62px);
   }
 
   .top-bar {
@@ -253,19 +287,15 @@ button {
 
 @media (max-width: 640px) {
   .side-rail {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 10px 12px;
-    padding: 12px 16px 9px;
-  }
-
-  .side-rail.mobile-nav-hidden {
-    margin-bottom: -108px;
+    display: flex;
+    grid-template-columns: none;
+    align-items: stretch;
+    gap: 18px;
+    padding: 18px 14px 20px;
   }
 
   .nav-links {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .top-bar {
@@ -274,8 +304,8 @@ button {
 
   .content-shell {
     flex: 1;
-    height: 100vh;
-    height: 100dvh;
+    height: calc(100vh - 62px);
+    height: calc(100dvh - 62px);
     min-height: 0;
   }
 

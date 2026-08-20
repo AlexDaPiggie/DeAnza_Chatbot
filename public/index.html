@@ -11,11 +11,34 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <link rel="stylesheet" href="/css/variables.css">
-  <link rel="stylesheet" href="/css/layout.css?v=25">
-  <link rel="stylesheet" href="/css/components.css?v=46">
+  <link rel="stylesheet" href="/css/layout.css?v=26">
+  <link rel="stylesheet" href="/css/components.css?v=48">
 </head>
 <body>
   <div class="app-shell">
+    <header class="mobile-topbar" aria-label="Mobile navigation">
+      <button id="mobile-menu-open" class="mobile-menu-trigger" type="button" aria-label="Open menu">
+        <span class="brand-mark" aria-hidden="true">DA</span>
+      </button>
+
+      <div class="mobile-topbar-actions" aria-label="Mobile page controls">
+        <button id="mobile-theme-toggle" class="theme-switch" type="button" role="switch" aria-label="Switch to night mode" aria-checked="false">
+          <span class="theme-switch-track" aria-hidden="true">
+            <span class="theme-switch-thumb">
+              <span class="theme-icon">☾</span>
+            </span>
+          </span>
+        </button>
+
+        <div class="mobile-status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          Official sources
+        </div>
+      </div>
+    </header>
+
+    <div id="mobile-menu-backdrop" class="mobile-menu-backdrop" aria-hidden="true"></div>
+
     <aside class="side-rail" aria-label="Assistant navigation">
       <button class="brand-block" id="brand-home" type="button" aria-label="Go to chat home">
         <div class="brand-mark" aria-hidden="true">DA</div>
@@ -23,6 +46,8 @@
           <p class="brand-name">De Anza Assist</p>
         </div>
       </button>
+
+      <button id="mobile-menu-close" class="mobile-menu-close" type="button" aria-label="Close menu">×</button>
 
       <div class="mobile-brand-actions" aria-label="Mobile page controls">
         <button id="mobile-theme-toggle" class="theme-switch" type="button" role="switch" aria-label="Switch to night mode" aria-checked="false">
@@ -192,6 +217,6 @@
     <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">↑</button>
   </div>
 
-  <script type="module" src="/js/app.js?v=24"></script>
+  <script type="module" src="/js/app.js?v=25"></script>
 </body>
 </html>

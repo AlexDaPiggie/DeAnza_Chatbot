@@ -25,6 +25,9 @@ const typingHeadline = document.querySelector(".typing-headline");
 const typingText = typingHeadline?.querySelector(".typing-text");
 const sideRail = document.querySelector(".side-rail");
 const scrollTopBtn = document.getElementById("scroll-top-btn");
+const mobileMenuOpen = document.getElementById("mobile-menu-open");
+const mobileMenuClose = document.getElementById("mobile-menu-close");
+const mobileMenuBackdrop = document.getElementById("mobile-menu-backdrop");
 
 const state = {
   history: [],
@@ -107,31 +110,30 @@ themeToggles.forEach((toggle) => {
 });
 
 function initMobileNavScroll() {
-  if (!sideRail || !scrollContainer) return;
-
-  let lastScrollTop = 0;
-
-  scrollContainer.addEventListener("scroll", () => {
-    if (!window.matchMedia("(max-width: 640px)").matches) {
-      sideRail.classList.remove("mobile-nav-hidden");
-      return;
-    }
-
-    const currentScrollTop = scrollContainer.scrollTop;
-    const isScrollingDown = currentScrollTop > lastScrollTop + 8;
-    const isScrollingUp = currentScrollTop < lastScrollTop - 8;
-
-    if (isScrollingDown && currentScrollTop > 40) {
-      sideRail.classList.add("mobile-nav-hidden");
-    } else if (isScrollingUp || currentScrollTop <= 8) {
-      sideRail.classList.remove("mobile-nav-hidden");
-    }
-
-    lastScrollTop = Math.max(currentScrollTop, 0);
-  }, { passive: true });
+  return;
 }
 
 initMobileNavScroll();
+
+function isMobileMenuLayout() {
+  return window.matchMedia("(max-width: 900px)").matches;
+}
+
+function openMobileMenu() {
+  if (!isMobileMenuLayout()) return;
+  document.body.classList.add("mobile-menu-open");
+}
+
+function closeMobileMenu() {
+  document.body.classList.remove("mobile-menu-open");
+}
+
+mobileMenuOpen?.addEventListener("click", openMobileMenu);
+mobileMenuClose?.addEventListener("click", closeMobileMenu);
+mobileMenuBackdrop?.addEventListener("click", closeMobileMenu);
+window.addEventListener("resize", () => {
+  if (!isMobileMenuLayout()) closeMobileMenu();
+});
 
 function initScrollTopButton() {
   if (!scrollContainer || !scrollTopBtn) return;
@@ -237,6 +239,7 @@ navBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     const targetView = btn.dataset.view;
     switchView(targetView);
+    closeMobileMenu();
     if (targetView === "chat-view" && inputBox) {
       inputBox.focus();
     }
@@ -244,6 +247,11 @@ navBtns.forEach((btn) => {
 });
 
 brandHome?.addEventListener("click", () => {
+  if (isMobileMenuLayout()) {
+    switchView("chat-view");
+    closeMobileMenu();
+    return;
+  }
   switchView("chat-view");
   if (scrollContainer) scrollContainer.scrollTop = 0;
   if (inputBox) inputBox.focus();
@@ -252,6 +260,7 @@ brandHome?.addEventListener("click", () => {
 promptBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     const prompt = btn.dataset.prompt;
+    closeMobileMenu();
     if (prompt) submitPrompt(prompt);
   });
 });

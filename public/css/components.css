@@ -21,6 +21,17 @@
   outline-offset: 4px;
 }
 
+.mobile-menu-trigger {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mobile-menu-close {
+  display: none;
+}
+
 .brand-mark {
   width: 42px;
   height: 42px;
@@ -165,6 +176,10 @@ body[data-theme="dark"] .nav-btn.active {
 }
 
 .mobile-brand-actions {
+  display: none;
+}
+
+.mobile-topbar-actions {
   display: none;
 }
 
@@ -891,8 +906,21 @@ body[data-theme="dark"] .stop-response-btn:hover {
 }
 
 @media (max-width: 900px) {
+  .mobile-menu-trigger,
+  .mobile-topbar-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-topbar-actions {
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
+  }
+
   .brand-block {
-    justify-content: space-between;
+    justify-content: flex-start;
+    padding-right: 42px;
   }
 
   .brand-mark {
@@ -900,13 +928,41 @@ body[data-theme="dark"] .stop-response-btn:hover {
     height: 38px;
   }
 
+  .mobile-menu-close {
+    position: absolute;
+    top: 20px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 1.18rem;
+    line-height: 1;
+    transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+  }
+
+  .mobile-menu-close:hover {
+    color: var(--primary);
+    border-color: var(--primary-border);
+    background: var(--primary-light);
+  }
+
   .nav-links {
     display: flex;
-    overflow-x: auto;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
   }
 
   .rail-section {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .rail-label {
@@ -914,7 +970,7 @@ body[data-theme="dark"] .stop-response-btn:hover {
   }
 
   .rail-chip {
-    text-align: center;
+    text-align: left;
     white-space: nowrap;
   }
 
@@ -930,15 +986,11 @@ body[data-theme="dark"] .stop-response-btn:hover {
   }
 
   .brand-block .brand-name {
-    display: none;
+    display: block;
   }
 
   .mobile-brand-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    min-width: 0;
+    display: none;
   }
 
   .mobile-status-pill {
@@ -948,14 +1000,14 @@ body[data-theme="dark"] .stop-response-btn:hover {
   }
 
   .nav-links {
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
   }
 
   .nav-btn {
     min-height: 39px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 9px;
     padding: 0 12px;
     line-height: 1;
@@ -974,7 +1026,7 @@ body[data-theme="dark"] .stop-response-btn:hover {
   }
 
   .rail-section {
-    display: none;
+    display: grid;
   }
 
   .welcome-panel {

@@ -1,26 +1,67 @@
 :root {
-  /* De Anza Brand & Palette Tokens */
-  --primary: #800000;
-  --primary-hover: #6a0000;
-  --primary-light: #fbf0f0;
-  --primary-border: rgba(128, 0, 0, 0.15);
-
-  /* Neutrals & Surfaces */
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
-  --text-main: #0f172a;
+  --primary: #8a1538;
+  --primary-hover: #6f102d;
+  --primary-light: #fff0f4;
+  --primary-border: rgba(138, 21, 56, 0.16);
+  --green: #176b55;
+  --green-soft: #e8f3ef;
+  --gold: #b98a2d;
+  --gold-soft: #fff8e8;
+  --blue: #6f98c6;
+  --blue-soft: #edf5fb;
+  --violet: #8d7aa7;
+  --rose: #c87890;
+  --ink: #172033;
+  --bg: #fff8fa;
+  --surface: #ffffff;
+  --surface-muted: #fbf7f8;
+  --text-main: #1f2937;
   --text-muted: #64748b;
-  --border: #e2e8f0;
-
-  /* Message Bubbles */
-  --user-bubble: #800000;
+  --text-soft: #8a94a6;
+  --border: #eadde2;
+  --border-strong: #dccbd2;
+  --user-bubble: #8a1538;
   --user-text: #ffffff;
   --bot-bubble: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(47, 26, 34, 0.06);
+  --shadow-md: 0 18px 42px rgba(47, 26, 34, 0.08);
+  --shadow-focus: 0 0 0 4px rgba(138, 21, 56, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --font-sans: 'Manrope', "Segoe UI", Aptos, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --page-bg:
+    radial-gradient(circle at 12% 10%, rgba(255, 196, 209, 0.72), transparent 32%),
+    radial-gradient(circle at 72% 18%, rgba(255, 226, 233, 0.6), transparent 34%),
+    linear-gradient(135deg, #ffeef3 0%, #fff7f9 42%, #ffffff 100%);
+  --rail-bg: rgba(255, 255, 255, 0.72);
+  --footer-bg: rgba(255, 255, 255, 0.84);
+}
 
-  /* Elevation */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+body[data-theme="dark"] {
+  --primary: #ff8aaa;
+  --primary-hover: #ffb1c8;
+  --primary-light: rgba(255, 138, 170, 0.14);
+  --primary-border: rgba(255, 138, 170, 0.25);
+  --green: #73d8bc;
+  --green-soft: rgba(115, 216, 188, 0.13);
+  --ink: #f7f1f3;
+  --bg: #151018;
+  --surface: #211924;
+  --surface-muted: #241c27;
+  --text-main: #f4eef0;
+  --text-muted: #c9bbc2;
+  --text-soft: #a999a1;
+  --border: rgba(255, 228, 236, 0.12);
+  --border-strong: rgba(255, 228, 236, 0.22);
+  --user-bubble: #9c3157;
+  --bot-bubble: #211924;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 20px 52px rgba(0, 0, 0, 0.26);
+  --shadow-focus: 0 0 0 4px rgba(255, 138, 170, 0.14);
+  --page-bg:
+    radial-gradient(circle at 16% 8%, rgba(124, 25, 56, 0.34), transparent 34%),
+    linear-gradient(135deg, #17101a 0%, #22151d 48%, #0f1218 100%);
+  --rail-bg: rgba(28, 22, 31, 0.76);
+  --footer-bg: rgba(19, 15, 22, 0.82);
 }

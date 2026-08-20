@@ -408,10 +408,13 @@ body[data-theme="dark"] .theme-switch-thumb {
 }
 
 .msg.bot {
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 5px;
+  max-width: min(920px, 100%);
+  border: 0;
+  border-radius: 0;
+  padding: 8px 0;
   color: var(--text-main);
-  background: var(--bot-bubble);
+  background: transparent;
+  box-shadow: none;
 }
 
 .msg.bot p {

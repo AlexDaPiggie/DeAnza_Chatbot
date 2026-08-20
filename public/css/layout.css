@@ -147,7 +147,7 @@ button {
   flex: 0 0 auto;
   width: 100%;
   margin: 0 auto;
-  padding: 0 max(24px, calc((100vw - 248px - 1080px) / 2 + 24px)) 180px;
+  padding: 0 max(24px, calc((100vw - 248px - 1080px) / 2 + 24px)) 220px;
   overflow: visible;
   display: flex;
   flex-direction: column;
@@ -242,7 +242,7 @@ button {
   }
 
   #chat-container {
-    padding: 18px 14px 162px;
+    padding: 18px 14px 190px;
   }
 
   .footer-container {
@@ -280,7 +280,7 @@ button {
   }
 
   #chat-container {
-    padding: 14px 14px 150px;
+    padding: 14px 14px 176px;
   }
 
   .footer-container {

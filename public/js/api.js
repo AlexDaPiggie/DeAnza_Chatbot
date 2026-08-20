@@ -1,18 +1,8 @@
-/**
- * Production Network & Streaming Client
- */
+// Handles the chat API call and the SSE response stream.
 import { API_ENDPOINTS } from "./config.js";
 
-/**
- * Sends chat query to backend and streams response tokens.
- * @param {Object} params
- * @param {string} params.message
- * @param {Array} params.history
- * @param {Function} params.onToken - Callback for each streaming string token
- * @param {Function} params.onDone - Callback when streaming completes
- * @param {Function} params.onError - Callback on HTTP/network error
- * @param {AbortSignal} [params.signal] - AbortController signal
- */
+// Backend sends chunks as server-sent events. Keep the callbacks small so
+// the UI layer can decide how to render each token.
 export async function streamChat({ message, history, onToken, onDone, onError, signal }) {
   try {
     const response = await fetch(API_ENDPOINTS.CHAT, {
@@ -39,7 +29,7 @@ export async function streamChat({ message, history, onToken, onDone, onError, s
 
       buffer += decoder.decode(value, { stream: true });
       const events = buffer.split("\n\n");
-      buffer = events.pop(); // Keep incomplete trailing chunk in buffer
+      buffer = events.pop(); // Save the unfinished event for the next chunk.
 
       for (const evt of events) {
         const trimmed = evt.trim();
@@ -55,7 +45,7 @@ export async function streamChat({ message, history, onToken, onDone, onError, s
             onToken(data.text);
           }
         } catch {
-          // Fallback if plain text SSE token
+          // Some streams may send raw text instead of JSON.
           const rawToken = trimmed.slice(6);
           if (rawToken && rawToken !== "[DONE]" && onToken) {
             onToken(rawToken);

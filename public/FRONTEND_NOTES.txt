@@ -1,0 +1,29 @@
+frontend stuff 
+========================
+- changed the page into the new De Anza Assist look
+- changed Authors to About
+- removed the Student AI text under the logo
+- made the logo/top-left thing clickable
+- changed the background + spacing 
+- added light mode / night mode to bottom right
+- night mode saves after refresh
+- implement mobile stuff
+
+chat stuff
+----------
+
+- popular topic buttons jump back to chat 
+- stopped it from running multiple questions at the same time
+- disabled the topic buttons + send button while loading
+- added the stop button
+
+files to double check
+
+- index.html
+- css/variables.css
+- css/layout.css
+- css/components.css
+- js/api.js
+- js/app.js
+- js/config.js
+- js/ui.js

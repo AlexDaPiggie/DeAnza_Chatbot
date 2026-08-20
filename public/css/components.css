@@ -461,6 +461,12 @@ body[data-theme="dark"] .theme-switch-thumb {
   background: #ffe7ee;
 }
 
+body[data-theme="dark"] .msg.bot a:hover {
+  color: #ff9fbd;
+  border-color: rgba(255, 143, 179, 0.5);
+  background: rgba(160, 42, 86, 0.22);
+}
+
 .source-group {
   margin-top: 14px;
   padding-top: 12px;

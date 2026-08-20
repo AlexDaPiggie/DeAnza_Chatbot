@@ -11,8 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <link rel="stylesheet" href="/css/variables.css">
-  <link rel="stylesheet" href="/css/layout.css?v=14">
-  <link rel="stylesheet" href="/css/components.css?v=31">
+  <link rel="stylesheet" href="/css/layout.css?v=24">
+  <link rel="stylesheet" href="/css/components.css?v=45">
 </head>
 <body>
   <div class="app-shell">
@@ -23,6 +23,21 @@
           <p class="brand-name">De Anza Assist</p>
         </div>
       </button>
+
+      <div class="mobile-brand-actions" aria-label="Mobile page controls">
+        <button id="mobile-theme-toggle" class="theme-switch" type="button" role="switch" aria-label="Switch to night mode" aria-checked="false">
+          <span class="theme-switch-track" aria-hidden="true">
+            <span class="theme-switch-thumb">
+              <span class="theme-icon">☾</span>
+            </span>
+          </span>
+        </button>
+
+        <div class="mobile-status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          Official sources
+        </div>
+      </div>
 
       <nav class="nav-links">
         <button class="nav-btn active" data-view="chat-view">
@@ -78,8 +93,7 @@
                 <span class="typing-text" aria-hidden="true"></span><span class="typing-cursor" aria-hidden="true"></span>
               </h2>
               <p>
-                Ask about prerequisites, course sequences, registration dates, GE patterns,
-                transfer prep, or where to find the right De Anza service.
+                Ask about classes, deadlines, transfer, and campus services.
               </p>
             </div>
 
@@ -106,10 +120,10 @@
 
         <footer class="footer-container">
           <div class="mode-tabs" aria-label="Prompt mode">
-            <button class="mode-tab active" data-mode="Explore" data-placeholder="Explore courses, policies, deadlines, or campus services...">Explore</button>
-            <button class="mode-tab" data-mode="Courses" data-placeholder="Find classes by subject, course code, prerequisite, or transfer goal...">Courses</button>
-            <button class="mode-tab" data-mode="Plan" data-placeholder="Describe your goal and ask Anza to help map the next academic step...">Plan</button>
-            <button class="mode-tab" data-mode="Policies" data-placeholder="Paste a requirement, policy, or course note you want explained...">Policies</button>
+            <button class="mode-tab active" data-mode="Explore" data-placeholder="Explore courses, policies, deadlines, or campus services..." data-mobile-placeholder="Ask about De Anza...">Explore</button>
+            <button class="mode-tab" data-mode="Courses" data-placeholder="Find classes by subject, course code, prerequisite, or transfer goal..." data-mobile-placeholder="Find a class...">Courses</button>
+            <button class="mode-tab" data-mode="Plan" data-placeholder="Describe your goal and ask Anza to help map the next academic step..." data-mobile-placeholder="Build a schedule...">Plan</button>
+            <button class="mode-tab" data-mode="Policies" data-placeholder="Paste a requirement, policy, or course note you want explained..." data-mobile-placeholder="Explain a policy...">Policies</button>
           </div>
 
           <form id="input-form">
@@ -174,8 +188,10 @@
         </div>
       </div>
     </section>
+
+    <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">↑</button>
   </div>
 
-  <script type="module" src="/js/app.js?v=19"></script>
+  <script type="module" src="/js/app.js?v=24"></script>
 </body>
 </html>

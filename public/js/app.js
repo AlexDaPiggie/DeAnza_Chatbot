@@ -10,6 +10,7 @@ import {
 } from "./ui.js";
 
 const chatContainer = document.getElementById("chat-container");
+const scrollContainer = document.querySelector(".content-shell");
 const inputForm = document.getElementById("input-form");
 const inputBox = document.getElementById("input-box");
 const sendBtn = document.getElementById("send-btn");
@@ -18,10 +19,12 @@ const promptBtns = document.querySelectorAll("[data-prompt]");
 const modeTabs = document.querySelectorAll(".mode-tab");
 const welcomePanel = document.querySelector(".welcome-panel");
 const brandHome = document.getElementById("brand-home");
-const themeToggle = document.getElementById("theme-toggle");
-const themeIcon = themeToggle?.querySelector(".theme-icon");
+const themeToggles = document.querySelectorAll(".theme-switch");
+const themeIcons = document.querySelectorAll(".theme-icon");
 const typingHeadline = document.querySelector(".typing-headline");
 const typingText = typingHeadline?.querySelector(".typing-text");
+const sideRail = document.querySelector(".side-rail");
+const scrollTopBtn = document.getElementById("scroll-top-btn");
 
 const state = {
   history: [],
@@ -39,11 +42,14 @@ function getInitialTheme() {
 
 function applyTheme(theme) {
   document.body.dataset.theme = theme;
-  if (!themeToggle || !themeIcon) return;
   const isDark = theme === "dark";
-  themeToggle.setAttribute("aria-checked", String(isDark));
-  themeToggle.setAttribute("aria-label", isDark ? "Switch to day mode" : "Switch to night mode");
-  themeIcon.textContent = isDark ? "☀" : "☾";
+  themeToggles.forEach((toggle) => {
+    toggle.setAttribute("aria-checked", String(isDark));
+    toggle.setAttribute("aria-label", isDark ? "Switch to day mode" : "Switch to night mode");
+  });
+  themeIcons.forEach((icon) => {
+    icon.textContent = isDark ? "☀" : "☾";
+  });
 }
 
 applyTheme(getInitialTheme());
@@ -92,11 +98,71 @@ function startTypingHeadline() {
 
 startTypingHeadline();
 
-themeToggle?.addEventListener("click", () => {
-  const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
-  localStorage.setItem("anza-theme", nextTheme);
-  applyTheme(nextTheme);
+themeToggles.forEach((toggle) => {
+  toggle.addEventListener("click", () => {
+    const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem("anza-theme", nextTheme);
+    applyTheme(nextTheme);
+  });
 });
+
+function initMobileNavScroll() {
+  if (!sideRail || !scrollContainer) return;
+
+  let lastScrollTop = 0;
+
+  scrollContainer.addEventListener("scroll", () => {
+    if (!window.matchMedia("(max-width: 640px)").matches) {
+      sideRail.classList.remove("mobile-nav-hidden");
+      return;
+    }
+
+    const currentScrollTop = scrollContainer.scrollTop;
+    const isScrollingDown = currentScrollTop > lastScrollTop + 8;
+    const isScrollingUp = currentScrollTop < lastScrollTop - 8;
+
+    if (isScrollingDown && currentScrollTop > 40) {
+      sideRail.classList.add("mobile-nav-hidden");
+    } else if (isScrollingUp || currentScrollTop <= 8) {
+      sideRail.classList.remove("mobile-nav-hidden");
+    }
+
+    lastScrollTop = Math.max(currentScrollTop, 0);
+  }, { passive: true });
+}
+
+initMobileNavScroll();
+
+function initScrollTopButton() {
+  if (!scrollContainer || !scrollTopBtn) return;
+
+  scrollContainer.addEventListener("scroll", () => {
+    scrollTopBtn.classList.toggle("visible", scrollContainer.scrollTop > 360);
+  }, { passive: true });
+
+  scrollTopBtn.addEventListener("click", () => {
+    scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
+initScrollTopButton();
+
+function getModePlaceholder(tab) {
+  const isMobile = window.matchMedia("(max-width: 640px)").matches;
+  return isMobile && tab.dataset.mobilePlaceholder
+    ? tab.dataset.mobilePlaceholder
+    : tab.dataset.placeholder;
+}
+
+function syncActiveModePlaceholder() {
+  if (!inputBox) return;
+  const activeTab = document.querySelector(".mode-tab.active");
+  const placeholder = activeTab ? getModePlaceholder(activeTab) : "";
+  if (placeholder) inputBox.placeholder = placeholder;
+}
+
+syncActiveModePlaceholder();
+window.addEventListener("resize", syncActiveModePlaceholder);
 
 function submitPrompt(text) {
   if (!inputBox || !inputForm) return;
@@ -179,7 +245,7 @@ navBtns.forEach((btn) => {
 
 brandHome?.addEventListener("click", () => {
   switchView("chat-view");
-  if (chatContainer) chatContainer.scrollTop = 0;
+  if (scrollContainer) scrollContainer.scrollTop = 0;
   if (inputBox) inputBox.focus();
 });
 
@@ -194,8 +260,9 @@ modeTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     modeTabs.forEach((item) => item.classList.remove("active"));
     tab.classList.add("active");
-    if (inputBox && tab.dataset.placeholder) {
-      inputBox.placeholder = tab.dataset.placeholder;
+    const placeholder = getModePlaceholder(tab);
+    if (inputBox && placeholder) {
+      inputBox.placeholder = placeholder;
       inputBox.focus();
     }
   });
@@ -232,6 +299,7 @@ inputForm.addEventListener("submit", async (e) => {
 
   markChatStarted();
   appendMessage(chatContainer, "user", query);
+  scrollToBottom(scrollContainer);
   inputBox.value = "";
   inputBox.style.height = "44px";
   state.isStreaming = true;
@@ -241,6 +309,7 @@ inputForm.addEventListener("submit", async (e) => {
   const botMsgElement = appendMessage(chatContainer, "bot", "Searching official De Anza sources...");
   state.activeBotMessage = botMsgElement;
   attachStopButton(botMsgElement);
+  scrollToBottom(scrollContainer);
   let fullResponse = "";
 
   await streamChat({
@@ -250,7 +319,8 @@ inputForm.addEventListener("submit", async (e) => {
     onToken: (token) => {
       fullResponse += token;
       updateBotMessage(botMsgElement, fullResponse);
-      scrollToBottom(chatContainer);
+      if (state.isStreaming) attachStopButton(botMsgElement);
+      scrollToBottom(scrollContainer);
     },
     onDone: () => {
       removeStopButton(botMsgElement);

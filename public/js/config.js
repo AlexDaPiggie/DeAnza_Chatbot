@@ -2,12 +2,14 @@
 
 const RENDER_API_ORIGIN = "https://deanza-chatbot.onrender.com";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
+const VERCEL_HOST_SUFFIX = ".vercel.app";
 
 function getApiOrigin() {
   const { hostname, origin } = window.location;
 
   if (origin === RENDER_API_ORIGIN) return "";
   if (LOCAL_HOSTS.has(hostname)) return RENDER_API_ORIGIN;
+  if (hostname.endsWith(VERCEL_HOST_SUFFIX)) return RENDER_API_ORIGIN;
 
   return "";
 }

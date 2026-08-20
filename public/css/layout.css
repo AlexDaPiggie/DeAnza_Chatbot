@@ -64,10 +64,39 @@ button {
 }
 
 .top-bar h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  min-height: 32px;
+  padding: 0;
   color: var(--ink);
-  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
-  line-height: 1.2;
-  letter-spacing: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1rem, 1.45vw, 1.28rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.top-bar h1::before {
+  content: "✦";
+  color: var(--primary);
+  font-family: var(--font-sans);
+  font-size: 0.72em;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.top-bar h1::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: -7px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--accent), transparent);
+  opacity: 0.72;
 }
 
 .eyebrow {
@@ -103,10 +132,10 @@ button {
 }
 
 .footer-container {
-  border-top: 1px solid rgba(223, 230, 238, 0.7);
+  border-top: 0;
   padding: 12px 24px 16px;
-  background: var(--footer-bg);
-  backdrop-filter: blur(16px);
+  background: transparent;
+  backdrop-filter: none;
   transition: background-color 0.24s ease, border-color 0.24s ease;
 }
 

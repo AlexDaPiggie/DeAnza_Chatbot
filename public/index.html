@@ -7,12 +7,12 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <link rel="stylesheet" href="/css/variables.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/components.css?v=17">
+  <link rel="stylesheet" href="/css/layout.css?v=14">
+  <link rel="stylesheet" href="/css/components.css?v=30">
 </head>
 <body>
   <div class="app-shell">
@@ -49,11 +49,19 @@
 
     <section class="content-shell">
       <header class="top-bar">
-        <div>
+        <div class="top-heading">
           <p class="eyebrow">De Anza College</p>
-          <h1>Hi, what can I help you find?</h1>
+          <h1>Find your next step</h1>
         </div>
         <div class="top-actions">
+          <button id="theme-toggle" class="theme-switch" type="button" role="switch" aria-label="Switch to night mode" aria-checked="false">
+            <span class="theme-switch-track" aria-hidden="true">
+              <span class="theme-switch-thumb">
+                <span class="theme-icon">☾</span>
+              </span>
+            </span>
+          </button>
+
           <div class="status-pill">
             <span class="status-dot" aria-hidden="true"></span>
             Official sources
@@ -66,7 +74,9 @@
           <section class="welcome-panel" aria-label="Chat starter">
             <div class="welcome-copy">
               <p class="eyebrow">Student assistant</p>
-              <h2>What do you want to find?</h2>
+              <h2 class="typing-headline" aria-label="Start with a question." data-text="Start with a question.">
+                <span class="typing-text" aria-hidden="true"></span><span class="typing-cursor" aria-hidden="true"></span>
+              </h2>
               <p>
                 Ask about prerequisites, course sequences, registration dates, GE patterns,
                 transfer prep, or where to find the right De Anza service.
@@ -166,10 +176,6 @@
     </section>
   </div>
 
-  <button id="theme-toggle" class="theme-toggle floating-theme-toggle" type="button" aria-label="Switch to night mode" aria-pressed="false">
-    <span class="theme-icon" aria-hidden="true">☾</span>
-  </button>
-
-  <script type="module" src="/js/app.js?v=15"></script>
+  <script type="module" src="/js/app.js?v=19"></script>
 </body>
 </html>

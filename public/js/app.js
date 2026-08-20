@@ -20,6 +20,8 @@ const welcomePanel = document.querySelector(".welcome-panel");
 const brandHome = document.getElementById("brand-home");
 const themeToggle = document.getElementById("theme-toggle");
 const themeIcon = themeToggle?.querySelector(".theme-icon");
+const typingHeadline = document.querySelector(".typing-headline");
+const typingText = typingHeadline?.querySelector(".typing-text");
 
 const state = {
   history: [],
@@ -39,12 +41,56 @@ function applyTheme(theme) {
   document.body.dataset.theme = theme;
   if (!themeToggle || !themeIcon) return;
   const isDark = theme === "dark";
-  themeToggle.setAttribute("aria-pressed", String(isDark));
+  themeToggle.setAttribute("aria-checked", String(isDark));
   themeToggle.setAttribute("aria-label", isDark ? "Switch to day mode" : "Switch to night mode");
   themeIcon.textContent = isDark ? "☀" : "☾";
 }
 
 applyTheme(getInitialTheme());
+
+function startTypingHeadline() {
+  if (!typingHeadline || !typingText) return;
+
+  const text = typingHeadline.dataset.text || "Start with a question.";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (reduceMotion) {
+    typingText.textContent = text;
+    return;
+  }
+
+  let index = 0;
+  let isDeleting = false;
+
+  function tick() {
+    typingText.textContent = text.slice(0, index);
+
+    if (!isDeleting && index < text.length) {
+      index += 1;
+      window.setTimeout(tick, 72);
+      return;
+    }
+
+    if (!isDeleting) {
+      isDeleting = true;
+      window.setTimeout(tick, 4000);
+      return;
+    }
+
+    if (index > 0) {
+      index -= 1;
+      window.setTimeout(tick, 42);
+      return;
+    }
+
+    isDeleting = false;
+    window.setTimeout(tick, 520);
+  }
+
+  tick();
+}
+
+startTypingHeadline();
 
 themeToggle?.addEventListener("click", () => {
   const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";

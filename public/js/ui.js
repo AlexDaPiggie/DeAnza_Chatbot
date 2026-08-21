@@ -12,7 +12,16 @@ export function appendMessage(container, role, initialText = "") {
   if (role === "user") {
     msg.textContent = initialText;
   } else {
-    msg.innerHTML = formatMarkdown(initialText);
+    if (initialText === "__THINKING__") {
+      msg.innerHTML = `
+        <div class="gemini-sparkle-loader">
+          <span class="sparkle-symbol" aria-hidden="true">✦</span>
+          <span class="sparkle-text">Thinking...</span>
+        </div>
+      `;
+    } else {
+      msg.innerHTML = formatMarkdown(initialText);
+    }
   }
 
   row.appendChild(msg);

@@ -315,9 +315,8 @@ inputForm.addEventListener("submit", async (e) => {
   setPromptButtonsDisabled(true);
   setLoadingState(sendBtn, true);
 
-  const botMsgElement = appendMessage(chatContainer, "bot", "Searching official De Anza sources...");
+  const botMsgElement = appendMessage(chatContainer, "bot", "__THINKING__");
   state.activeBotMessage = botMsgElement;
-  attachStopButton(botMsgElement);
   scrollToBottom(scrollContainer);
   let fullResponse = "";
 
@@ -328,7 +327,6 @@ inputForm.addEventListener("submit", async (e) => {
     onToken: (token) => {
       fullResponse += token;
       updateBotMessage(botMsgElement, fullResponse);
-      if (state.isStreaming) attachStopButton(botMsgElement);
       scrollToBottom(scrollContainer);
     },
     onDone: () => {

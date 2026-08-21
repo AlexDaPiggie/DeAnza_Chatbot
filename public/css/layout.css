@@ -136,6 +136,14 @@ button {
   text-transform: uppercase;
 }
 
+.welcome-copy .eyebrow::before {
+  content: "✦";
+  color: var(--primary);
+  font-family: var(--font-sans);
+  font-size: 0.85em;
+  margin-right: 5px;
+}
+
 .page-view {
   min-height: 0;
   flex: 0 0 auto;

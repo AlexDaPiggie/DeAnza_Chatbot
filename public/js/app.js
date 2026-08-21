@@ -53,7 +53,7 @@ function applyTheme(theme) {
     toggle.setAttribute("aria-label", isDark ? "Switch to day mode" : "Switch to night mode");
   });
   themeIcons.forEach((icon) => {
-    icon.textContent = isDark ? "☾" : "☀";
+    icon.textContent = isDark ? "☀" : "☾";
   });
 }
 

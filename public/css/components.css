@@ -756,20 +756,20 @@ body[data-theme="dark"] #input-form {
   position: sticky;
   top: 8px;
   flex: 0 0 auto;
-  width: 46px;
-  height: 44px;
-  min-height: 44px;
+  width: 40px;
+  height: 38px;
+  min-height: 38px;
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 12px;
+  border-radius: 11px;
   padding: 0;
   color: #ffffff;
   background: #9c123f;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  box-shadow: 0 12px 24px rgba(156, 18, 63, 0.24);
+  box-shadow: 0 10px 20px rgba(156, 18, 63, 0.22);
 }
 
 .stop-response-btn:hover {
@@ -820,7 +820,7 @@ body[data-theme="dark"] .scroll-top-btn {
 
 body[data-theme="dark"] .stop-response-btn {
   background: #fb7da8;
-  box-shadow: 0 12px 24px rgba(251, 125, 168, 0.2);
+  box-shadow: 0 10px 20px rgba(251, 125, 168, 0.18);
 }
 
 body[data-theme="dark"] .stop-response-btn:hover {

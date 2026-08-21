@@ -7,7 +7,7 @@ import {
   scrollToBottom,
   setLoadingState,
   switchView
-} from "./ui.js";
+} from "./ui.js?v=2";
 
 const chatContainer = document.getElementById("chat-container");
 const scrollContainer = document.querySelector(".content-shell");
@@ -34,6 +34,8 @@ const state = {
   abortController: null,
   hasStartedChat: false,
   isStreaming: false,
+  isSubmitting: false,
+  allowSubmitOnce: false,
   activeBotMessage: null
 };
 
@@ -168,10 +170,13 @@ window.addEventListener("resize", syncActiveModePlaceholder);
 
 function submitPrompt(text) {
   if (!inputBox || !inputForm) return;
-  if (state.isStreaming) {
+  if (isRequestActive()) {
     inputBox.focus();
     return;
   }
+  state.isSubmitting = true;
+  state.allowSubmitOnce = true;
+  setRequestLock(true);
   switchView("chat-view");
   inputBox.value = text;
   autoResizeTextarea(inputBox);
@@ -193,6 +198,30 @@ function setPromptButtonsDisabled(isDisabled) {
   });
 }
 
+function isRequestActive() {
+  return state.isStreaming || state.isSubmitting;
+}
+
+function setRequestLock(isLocked) {
+  state.isSubmitting = isLocked && !state.isStreaming;
+  document.body.classList.toggle("chat-request-active", isLocked);
+  setPromptButtonsDisabled(isLocked);
+  setLoadingState(sendBtn, isLocked);
+  if (inputBox) {
+    inputBox.readOnly = isLocked;
+    inputBox.setAttribute("aria-disabled", String(isLocked));
+  }
+}
+
+function clearRequestLock() {
+  state.isStreaming = false;
+  state.isSubmitting = false;
+  state.allowSubmitOnce = false;
+  state.activeBotMessage = null;
+  state.abortController = null;
+  setRequestLock(false);
+}
+
 function removeStopButton(botMsgElement = state.activeBotMessage) {
   const row = botMsgElement?.parentElement;
   row?.querySelector(".stop-response-btn")?.remove();
@@ -204,13 +233,9 @@ function stopActiveResponse() {
 
   const activeMessage = state.activeBotMessage;
   state.abortController?.abort();
-  state.abortController = null;
-  state.isStreaming = false;
-  state.activeBotMessage = null;
 
   removeStopButton(activeMessage);
-  setLoadingState(sendBtn, false);
-  setPromptButtonsDisabled(false);
+  clearRequestLock();
 
   if (activeMessage?.textContent.includes("Searching official De Anza sources")) {
     updateBotMessage(activeMessage, "Stopped.");
@@ -258,7 +283,9 @@ brandHome?.addEventListener("click", () => {
 });
 
 promptBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", (event) => {
+    event.preventDefault();
+    if (isRequestActive()) return;
     const prompt = btn.dataset.prompt;
     closeMobileMenu();
     if (prompt) submitPrompt(prompt);
@@ -286,6 +313,7 @@ inputBox.addEventListener("input", () => {
 inputBox.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
+    if (isRequestActive()) return;
     inputForm.requestSubmit();
   }
 });
@@ -293,13 +321,20 @@ inputBox.addEventListener("keydown", (e) => {
 inputForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  if (state.isStreaming) {
+  if (state.isStreaming || (state.isSubmitting && !state.allowSubmitOnce)) {
     inputBox.focus();
     return;
   }
 
   const query = inputBox.value.trim();
-  if (!query) return;
+  if (!query) {
+    clearRequestLock();
+    return;
+  }
+
+  state.allowSubmitOnce = false;
+  state.isSubmitting = true;
+  setRequestLock(true);
 
   if (state.abortController) {
     state.abortController.abort();
@@ -312,11 +347,12 @@ inputForm.addEventListener("submit", async (e) => {
   inputBox.value = "";
   inputBox.style.height = "44px";
   state.isStreaming = true;
-  setPromptButtonsDisabled(true);
-  setLoadingState(sendBtn, true);
+  state.isSubmitting = false;
+  setRequestLock(true);
 
   const botMsgElement = appendMessage(chatContainer, "bot", "__THINKING__");
   state.activeBotMessage = botMsgElement;
+  attachStopButton(botMsgElement);
   scrollToBottom(scrollContainer);
   let fullResponse = "";
 
@@ -327,6 +363,7 @@ inputForm.addEventListener("submit", async (e) => {
     onToken: (token) => {
       fullResponse += token;
       updateBotMessage(botMsgElement, fullResponse);
+      attachStopButton(botMsgElement);
       scrollToBottom(scrollContainer);
     },
     onDone: () => {
@@ -335,22 +372,14 @@ inputForm.addEventListener("submit", async (e) => {
         state.history.push({ role: "user", content: query });
         state.history.push({ role: "assistant", content: fullResponse });
       }
-      state.isStreaming = false;
-      state.activeBotMessage = null;
-      setLoadingState(sendBtn, false);
-      setPromptButtonsDisabled(false);
-      state.abortController = null;
+      clearRequestLock();
       inputBox.focus();
     },
     onError: (err) => {
       removeStopButton(botMsgElement);
       updateBotMessage(botMsgElement, "Sorry, I hit a connection issue while reaching the assistant. Please try again.");
       console.error("Chat Error:", err);
-      state.isStreaming = false;
-      state.activeBotMessage = null;
-      setLoadingState(sendBtn, false);
-      setPromptButtonsDisabled(false);
-      state.abortController = null;
+      clearRequestLock();
       inputBox.focus();
     }
   });

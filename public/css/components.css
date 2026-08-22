@@ -1311,6 +1311,9 @@ body[data-theme="dark"] .stop-response-btn:hover {
   }
 
   #input-form {
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
     min-height: 50px;
     grid-template-columns: minmax(0, 1fr) 40px;
     align-items: center;
@@ -1322,7 +1325,7 @@ body[data-theme="dark"] .stop-response-btn:hover {
   #input-box {
     min-height: 38px;
     padding: 9px 6px;
-    font-size: 0.86rem;
+    font-size: 16px;
     line-height: 1.35;
   }
 

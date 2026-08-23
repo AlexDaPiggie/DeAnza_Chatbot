@@ -1,11 +1,12 @@
 import json
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from core.schemas import ChatRequest, FeedbackRequest
 from core.chat import stream_chat
 from core.db import get_db
+from core.rate_limiter import chat_limiter, get_client_ip
 
 #Initialize the api
 app = FastAPI(title="De Anza AI Chatbot API")
@@ -34,7 +35,19 @@ def health_check():
     }
 
 @app.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, request: Request):
+
+    #Check ip rate limit
+    ip = get_client_ip(request)
+    allowed, retry_after = chat_limiter.check(ip)
+
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail = f"Rate limit exceeded. You can send 10 messages per minute. Please try again in {retry_after} seconds."
+        )
+
+    #Streaming generator
     async def event_generator():
         async for token in stream_chat(
             req.message,

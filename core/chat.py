@@ -1,6 +1,6 @@
 import os
 from typing import AsyncGenerator, List
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 from dotenv import load_dotenv
 from core.retrieval import hybrid_search
 
@@ -46,35 +46,104 @@ def build_prompt_context(chunks: list) -> str:
     return "\n\n---\n\n".join(parts)
 
 # Function to create the streaming chat effect
-async def stream_chat(message: str, history: List[dict] = None) -> AsyncGenerator[str, None]:
+async def stream_chat(
+    message: str, 
+    history: List[dict] = None
+) -> AsyncGenerator[str, None]:
+
+    # Rewrite the query if follow-up context is present
+    search_query = condense_query_with_history(message, history)
+
+    # Search database using rewritten query
     chunks = hybrid_search(message, top_k=5)
     context_text = build_prompt_context(chunks)
 
+    # Assemble prompt with system prompt, recent history, and current turn
     messages = [{
         "role": "system",
         "content": SYSTEM_PROMPT,
     }]
     if history:
-        for h in history[-4:]:
+        for h in history[-6:]:
             messages.append({
-                "role": h["role"],
-                "content": h["content"],
+                "role": h.get("role", "user"),
+                "content": h.get("content", ""),
             })
+
+    # Add the current user message with retrieved context
+    user_prompt = f"""Context from official De Anza sources: {context_text}
+    
+    Student Question: {message}"""
+
 
     messages.append({
         "role": "user",
-        "content": f"Context:\n{context_text}\n\nStudent Question: {message}"
+        "content": user_prompt,
     })
 
-    response = await client.chat.completions.create(
-        model=CHAT_MODEL,
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=messages,
-        temperature=0.0,
+        temperature=0.2,
         stream=True,
     )
 
-    async for chunk in response:
+    for chunk in response:
         delta = chunk.choices[0].delta.content
         if delta:
             yield delta
 
+
+client = OpenAI()
+
+CONDENSE_PROMPT = """Given the chat history follow-up question, rewrite the follow-up question into a standalone question that contains all necessary context(course codes, program names, policies) for a search engine
+
+Chat History: 
+{history_text}
+
+Follow-up Question: {question}
+
+Standalone Search Query:"""
+
+def condense_query_with_history (
+    message: str,
+    history: List[dict] = None
+): 
+    #If no history exists, the message is already standalone
+    if not history or len (history) == 0:
+        return message
+
+    #Format the last 4 messages (2 turns) for context
+    history_lines = []
+    for h in history[-4:]:
+        role = "Student" if h.get("role") == "user" else "Assistant"
+        content = h.get("content", "")
+
+        #Truncate assistant response to 200 chars to save tokens & latency
+        if role == "Assistant" and len(content) > 200:
+            content = content[:200] + "..."
+        history_lines.append(f"{role}: {content}")
+
+        history_text = "\n".join (history_lines)
+
+        try: 
+            response = client.chat.completions.create(
+                model = "gpt-4o-mini",
+                messages = [{
+                    "role": "user",
+                    "content": CONDENSE_PROMPT.format(
+                        history_text = history_text, 
+                        question = message,
+                    )
+                }],
+                max_tokens = 60,
+                temperature=0.0,
+            )
+            condensed = response.choices[0].message.content.strip()
+
+            return condensed if condensed else message
+        
+        except Exception as e:
+            print (f"Query condensation fallback due to error: {e}")
+
+            return message

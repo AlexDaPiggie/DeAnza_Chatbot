@@ -47,3 +47,13 @@ class FeedbackRequest(BaseModel):
     answer_text: str
     rating: int # 1 for up, 0 for down
     model_used: str # to report which model returns the bad answer
+
+#THis class is to define each single chat message
+class MessageItem(BaseModel):
+    role: str
+    content: str
+
+#This class is to complete the JSON's payload from the user to backend
+class ChatRequest(BaseModel): 
+    message: str
+    history: Optional[List[MessageItem]] = []

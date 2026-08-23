@@ -89,7 +89,7 @@ async def stream_chat(
     response = await async_client.chat.completions.create(
         model=CHAT_MODEL,
         messages=messages,
-        temperature=0.2,
+        temperature=0.3,
         stream=True,
     )
 
@@ -142,7 +142,7 @@ def condense_query_with_history (
                     )
                 }],
                 max_tokens = 60,
-                temperature=0.0,
+                temperature=0.1,
             )
             condensed = response.choices[0].message.content.strip()
 

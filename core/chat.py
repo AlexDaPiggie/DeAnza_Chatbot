@@ -15,7 +15,12 @@ RULES:
 2. Answer factual questions based ONLY on the provided context below.
 3. If prerequisites are listed as "None" for a course, clearly state that no prior experience, courses, or auditions are required.
 4. If schedule sections are provided in context, confirm whether the course is offered and list the relevant CRN, days, times, and instructor.
-5. If the context does NOT contain the answer to a factual question, politely state: "I don't have that official information in my database" and direct them to deanza.edu. Do NOT fabricate information.
+5. MISSING OR LIVE SCHEDULE DATA: If specific instructor names, live section availability, or current quarterly schedules are not found in the context:
+    - State clearly that live quarterly section details for that course are not in the database.
+    - Provide the direct official links immediately on the first attempt:
+      * [De Anza Schedule of Classes](https://www.deanza.edu/schedule/) (for live instructors, days, times, and open seats).
+      * [De Anza Course Catalog](https://www.deanza.edu/catalog/) (for course outlines and prerequisites).
+    - Do NOT fabricate names or dates.
 6. FORMATTING REQUIREMENTS:
     - Always insert TWO blank lines before every ### header and before bullet lists.
     - Use clear markdown with short paragraphs (2-3 sentences max).
@@ -55,7 +60,7 @@ async def stream_chat(
     search_query = condense_query_with_history(message, history)
 
     # Search database using rewritten query
-    chunks = hybrid_search(message, top_k=5)
+    chunks = hybrid_search(search_query, top_k=5)
     context_text = build_prompt_context(chunks)
 
     # Assemble prompt with system prompt, recent history, and current turn

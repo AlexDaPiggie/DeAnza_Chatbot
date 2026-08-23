@@ -81,7 +81,7 @@ async def stream_chat(
         "content": user_prompt,
     })
 
-    response = async_client.chat.completions.create(
+    response = await async_client.chat.completions.create(
         model=CHAT_MODEL,
         messages=messages,
         temperature=0.2,

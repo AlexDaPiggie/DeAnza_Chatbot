@@ -6,7 +6,7 @@ from core.retrieval import hybrid_search
 
 load_dotenv()
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+async_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 CHAT_MODEL=os.getenv("CHAT_MODEL", "gpt-4o-mini")
 SYSTEM_PROMPT = """You are the official De Anza College AI Assistant.
 
@@ -81,20 +81,20 @@ async def stream_chat(
         "content": user_prompt,
     })
 
-    response = client.chat.completions.create(
-        model="gpt-4o",
+    response = async_client.chat.completions.create(
+        model=CHAT_MODEL,
         messages=messages,
         temperature=0.2,
         stream=True,
     )
 
-    for chunk in response:
+    async for chunk in response:
         delta = chunk.choices[0].delta.content
         if delta:
             yield delta
 
 
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 CONDENSE_PROMPT = """Given the chat history follow-up question, rewrite the follow-up question into a standalone question that contains all necessary context(course codes, program names, policies) for a search engine
 

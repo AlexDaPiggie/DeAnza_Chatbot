@@ -1,5 +1,5 @@
 // Handles the chat API call and the SSE response stream.
-import { API_ENDPOINTS } from "./config.js";
+import { API_ENDPOINTS } from "./config.js?v=2";
 
 // Backend sends chunks as server-sent events. Keep the callbacks small so
 // the UI layer can decide how to render each token.

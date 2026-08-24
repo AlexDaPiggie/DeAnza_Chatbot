@@ -4,9 +4,12 @@ const RENDER_API_ORIGIN = "https://deanza-chatbot.onrender.com";
 const VERCEL_HOST_SUFFIX = ".vercel.app";
 
 function getApiOrigin() {
-  const { hostname } = window.location;
+  const { hostname, port } = window.location;
 
   if (hostname.endsWith(VERCEL_HOST_SUFFIX)) return RENDER_API_ORIGIN;
+  if ((hostname === "localhost" || hostname === "127.0.0.1") && port !== "8000") {
+    return RENDER_API_ORIGIN;
+  }
 
   return "";
 }

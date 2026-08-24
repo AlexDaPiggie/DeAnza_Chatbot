@@ -139,6 +139,21 @@ body[data-theme="dark"] .nav-btn.active {
   gap: 8px;
 }
 
+.recents-list {
+  display: grid;
+  gap: 8px;
+}
+
+.recents-empty {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-soft);
+  background: var(--surface);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .rail-label {
   color: var(--text-soft);
   font-size: 0.72rem;
@@ -164,6 +179,25 @@ body[data-theme="dark"] .nav-btn.active {
   border-color: var(--primary-border);
   background: var(--primary-light);
   box-shadow: var(--shadow-sm);
+}
+
+.recent-chat-chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-chat-chip.active {
+  color: var(--primary);
+  border-color: var(--primary-border);
+  background: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+body[data-theme="dark"] .recent-chat-chip.active {
+  color: #ff9fbd;
+  border-color: rgba(255, 143, 179, 0.44);
+  background: #321b2a;
 }
 
 .rail-note {

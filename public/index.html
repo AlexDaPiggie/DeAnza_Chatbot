@@ -14,7 +14,7 @@
 
   <link rel="stylesheet" href="/css/variables.css?v=3">
   <link rel="stylesheet" href="/css/layout.css?v=27">
-  <link rel="stylesheet" href="/css/components.css?v=64">
+  <link rel="stylesheet" href="/css/components.css?v=65">
 </head>
 <body>
   <div class="app-shell">
@@ -71,22 +71,20 @@
       </div>
 
       <nav class="nav-links">
-        <button class="nav-btn active" data-view="chat-view">
-          <span class="nav-icon" aria-hidden="true">+</span>
-          <span>Chat</span>
-        </button>
         <button class="nav-btn" data-view="authors-view">
           <span class="nav-icon" aria-hidden="true">i</span>
           <span>Authors</span>
         </button>
+        <button id="new-chat-btn" class="nav-btn active" data-view="chat-view">
+          <span class="nav-icon" aria-hidden="true">+</span>
+          <span>New Chat</span>
+        </button>
       </nav>
 
-      <div class="rail-section">
-        <p class="rail-label">Other topics</p>
-        <button class="rail-chip" data-prompt="What is the De Anza College Promise program and how do I qualify for free tuition?">Promise</button>
-        <button class="rail-chip" data-prompt="What are the admission and visa requirements for international students (F-1) at De Anza?">International</button>
-        <button class="rail-chip" data-prompt="Where can I get free tutoring for math, science, and writing on campus?">Tutoring</button>
-        <button class="rail-chip" data-prompt="What is the grading policy and deadline for choosing Pass/No Pass (P/NP)?">Pass/No Pass</button>
+      <div class="rail-section recents-section">
+        <p class="rail-label">Recents</p>
+        <div id="recents-list" class="recents-list" aria-live="polite"></div>
+        <p id="recents-empty" class="recents-empty">Your chats will show up here.</p>
       </div>
 
       <div class="rail-note">
@@ -224,6 +222,6 @@
     <button id="scroll-top-btn" class="scroll-top-btn" type="button" aria-label="Scroll to top">↑</button>
   </div>
 
-  <script type="module" src="/js/app.js?v=32"></script>
+  <script type="module" src="/js/app.js?v=34"></script>
 </body>
 </html>

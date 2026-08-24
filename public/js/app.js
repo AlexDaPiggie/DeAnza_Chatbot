@@ -1,5 +1,5 @@
 // Chat screen wiring: view changes, theme state, prompt clicks, and requests.
-import { streamChat } from "./api.js";
+import { streamChat } from "./api.js?v=2";
 import {
   appendMessage,
   updateBotMessage,
@@ -18,6 +18,9 @@ const navBtns = document.querySelectorAll(".nav-btn");
 const promptBtns = document.querySelectorAll("[data-prompt]");
 const modeTabs = document.querySelectorAll(".mode-tab");
 const welcomePanel = document.querySelector(".welcome-panel");
+const newChatBtn = document.getElementById("new-chat-btn");
+const recentsList = document.getElementById("recents-list");
+const recentsEmpty = document.getElementById("recents-empty");
 const brandHome = document.getElementById("brand-home");
 const themeToggles = document.querySelectorAll(".theme-switch");
 const themeIcons = document.querySelectorAll(".theme-icon");
@@ -31,6 +34,9 @@ const mobileMenuBackdrop = document.getElementById("mobile-menu-backdrop");
 
 const state = {
   history: [],
+  messages: [],
+  conversations: [],
+  activeConversationId: null,
   abortController: null,
   hasStartedChat: false,
   isStreaming: false,
@@ -38,6 +44,153 @@ const state = {
   allowSubmitOnce: false,
   activeBotMessage: null
 };
+
+function createConversationId() {
+  return `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function summarizeChatTitle(query) {
+  const cleaned = query
+    .replace(/\s+/g, " ")
+    .replace(/[?!]+$/g, "")
+    .trim();
+
+  const lower = cleaned.toLowerCase();
+  const knownTitles = [
+    ["transfer admission guarantee", "TAG transfer guarantee"],
+    ["financial aid", "Financial aid help"],
+    ["fafsa", "FAFSA and fee waivers"],
+    ["counselor", "Counseling appointment"],
+    ["add, drop", "Add / drop deadlines"],
+    ["refund deadlines", "Refund deadlines"],
+    ["prerequisites", "Course prerequisites"],
+    ["pass/no pass", "Pass / No Pass policy"],
+    ["international", "International student help"],
+    ["promise", "College Promise"],
+    ["tutoring", "Tutoring support"]
+  ];
+  const match = knownTitles.find(([keyword]) => lower.includes(keyword));
+  if (match) return match[1];
+
+  const compact = cleaned
+    .replace(/^what (are|is|does)\s+/i, "")
+    .replace(/^how (do|does|can)\s+/i, "")
+    .replace(/^where (can|do)\s+/i, "")
+    .replace(/\bat de anza\b/ig, "")
+    .trim();
+
+  if (!compact) return "New De Anza chat";
+  return compact.length > 38 ? `${compact.slice(0, 35).trim()}...` : compact;
+}
+
+function getActiveConversation() {
+  return state.conversations.find((chat) => chat.id === state.activeConversationId) || null;
+}
+
+function syncActiveConversation() {
+  const activeChat = getActiveConversation();
+  if (!activeChat) return;
+  activeChat.history = [...state.history];
+  activeChat.messages = [...state.messages];
+  activeChat.updatedAt = Date.now();
+}
+
+function ensureActiveConversation(query) {
+  if (state.activeConversationId) return getActiveConversation();
+
+  const chat = {
+    id: createConversationId(),
+    title: summarizeChatTitle(query),
+    history: [],
+    messages: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  state.conversations.unshift(chat);
+  state.activeConversationId = chat.id;
+  renderRecents();
+  return chat;
+}
+
+function renderRecents() {
+  if (!recentsList || !recentsEmpty) return;
+  recentsList.innerHTML = "";
+  recentsEmpty.hidden = state.conversations.length > 0;
+
+  state.conversations.forEach((chat) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "rail-chip recent-chat-chip";
+    btn.dataset.chatId = chat.id;
+    btn.textContent = chat.title;
+    if (chat.id === state.activeConversationId) btn.classList.add("active");
+    btn.addEventListener("click", () => openRecentChat(chat.id));
+    recentsList.appendChild(btn);
+  });
+}
+
+function clearVisibleMessages() {
+  chatContainer.querySelectorAll(".message-row").forEach((row) => row.remove());
+}
+
+function resetToEmptyChat() {
+  clearVisibleMessages();
+  state.history = [];
+  state.messages = [];
+  state.activeConversationId = null;
+  state.hasStartedChat = false;
+  welcomePanel?.classList.remove("welcome-panel-hidden");
+  renderRecents();
+  if (scrollContainer) scrollContainer.scrollTop = 0;
+}
+
+function renderConversation(chat) {
+  clearVisibleMessages();
+  state.history = [...chat.history];
+  state.messages = [...chat.messages];
+  state.activeConversationId = chat.id;
+  state.hasStartedChat = state.messages.length > 0;
+
+  if (state.hasStartedChat) {
+    welcomePanel?.classList.add("welcome-panel-hidden");
+  } else {
+    welcomePanel?.classList.remove("welcome-panel-hidden");
+  }
+
+  state.messages.forEach((message) => {
+    appendMessage(chatContainer, message.role, message.content);
+  });
+
+  renderRecents();
+  switchView("chat-view");
+  closeMobileMenu();
+  scrollToBottom(scrollContainer);
+  inputBox?.focus();
+}
+
+function openRecentChat(chatId) {
+  if (isRequestActive()) return;
+  syncActiveConversation();
+  const chat = state.conversations.find((item) => item.id === chatId);
+  if (chat) renderConversation(chat);
+}
+
+function startNewChat() {
+  if (isRequestActive()) {
+    inputBox?.focus();
+    return;
+  }
+
+  syncActiveConversation();
+  switchView("chat-view");
+  closeMobileMenu();
+
+  const currentIsEmpty = !state.activeConversationId && state.messages.length === 0 && !state.hasStartedChat;
+  if (!currentIsEmpty) resetToEmptyChat();
+
+  inputBox?.focus();
+}
 
 function getInitialTheme() {
   const savedTheme = localStorage.getItem("anza-theme");
@@ -58,6 +211,7 @@ function applyTheme(theme) {
 }
 
 applyTheme(getInitialTheme());
+renderRecents();
 
 function startTypingHeadline() {
   if (!typingHeadline || !typingText) return;
@@ -262,6 +416,11 @@ function attachStopButton(botMsgElement) {
 
 navBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
+    if (btn === newChatBtn) {
+      startNewChat();
+      return;
+    }
+
     const targetView = btn.dataset.view;
     switchView(targetView);
     closeMobileMenu();
@@ -332,6 +491,8 @@ inputForm.addEventListener("submit", async (e) => {
     return;
   }
 
+  const activeChat = ensureActiveConversation(query);
+
   state.allowSubmitOnce = false;
   state.isSubmitting = true;
   setRequestLock(true);
@@ -343,6 +504,8 @@ inputForm.addEventListener("submit", async (e) => {
 
   markChatStarted();
   appendMessage(chatContainer, "user", query);
+  state.messages.push({ role: "user", content: query });
+  syncActiveConversation();
   scrollToBottom(scrollContainer);
   inputBox.value = "";
   inputBox.style.height = "44px";
@@ -371,13 +534,23 @@ inputForm.addEventListener("submit", async (e) => {
       if (fullResponse.trim()) {
         state.history.push({ role: "user", content: query });
         state.history.push({ role: "assistant", content: fullResponse });
+        state.messages.push({ role: "bot", content: fullResponse });
+        if (activeChat) {
+          activeChat.history = [...state.history];
+          activeChat.messages = [...state.messages];
+          activeChat.updatedAt = Date.now();
+        }
       }
+      renderRecents();
       clearRequestLock();
       inputBox.focus();
     },
     onError: (err) => {
       removeStopButton(botMsgElement);
-      updateBotMessage(botMsgElement, "Sorry, I hit a connection issue while reaching the assistant. Please try again.");
+      const errorText = "Sorry, I hit a connection issue while reaching the assistant. Please try again.";
+      updateBotMessage(botMsgElement, errorText);
+      state.messages.push({ role: "bot", content: errorText });
+      syncActiveConversation();
       console.error("Chat Error:", err);
       clearRequestLock();
       inputBox.focus();

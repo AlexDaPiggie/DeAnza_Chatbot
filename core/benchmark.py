@@ -15,37 +15,30 @@ client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
-BENCHMARK_MODELS = [
+BENCHMARK_MODELS = {
     #openai 
-    "openai/gpt-4o",
-    "openai/gpt-4o-mini",
-    "openai/gpt-4-turbo",
-    "openai/o3-mini",
+    "openai/gpt-4o-mini": {"input": 0.15, "output": 0.6},
+    "openai/o3-mini": {"input": 1.1, "output": 4.4},
 
     #anthropic
-    "anthropic/claude-3.5-sonnet",
-    "anthropic/claude-3.5-haiku",
-    "anthropic/claude-3-opus",
+    "anthropic/claude-3-haiku": {"input": 0.25, "output": 1.25},
 
     #gemini
-    "google/gemini-2.0-flash-001",
-    "google/gemini-pro-1.5",
-    "google/gemini-flash-1.5",
+    "google/gemini-2.5-flash": {"input": 0.075, "output": 0.3},
+    "google/gemini-3.5-flash": {"input": 0.10, "output": 0.40},
 
     #llama
-    "meta-llama/llama-3.3-70b-instruct",
-    "meta-llama/llama-3.1-8b-instruct",
-    "meta-llama/llama-3.1-405b-instruct",
+    "meta-llama/llama-3.3-70b-instruct": {"input": 0.35, "output": 0.4},
+    "meta-llama/llama-3.2-3b-instruct": {"input": 0.06, "output": 0.06},
+    "deepseek/deepseek-r1-distill-llama-70b": {"input": 0.23, "output": 0.69},
 
     #chinese + cohere + microsoft
-    "deepseek/deepseek-chat",
-    "deepseek/deepseek-r1",
-    "mistralai/mistral-large",
-    "mistralai/mistral-small",
-    "qwen/qwen-2.5-72b-instruct",
-    "cohere/command-r-plus",
-    "microsoft/phi-3-medium-128k-instruct",
-]
+    "deepseek/deepseek-chat": {"input": 0.14, "output": 0.28},
+    "mistralai/ministral-8b-2512": {"input": 0.10, "output": 0.10},
+    "qwen/qwen-2.5-72b-instruct": {"input": 0.35, "output": 0.6},
+    "cohere/command-r-08-2024": {"input": 0.15, "output": 0.6},
+    "microsoft/phi-4": {"input": 0.07, "output": 0.14},
+}
 
 def run_model_inference(
     model: str, 
@@ -66,7 +59,7 @@ def run_model_inference(
         },
         {
             "role": "user",
-            "content": prompt
+            "content": prompt,
         }
     ]
 
@@ -79,7 +72,9 @@ def run_model_inference(
             max_tokens = 500,
         )
         latency_ms = (time.perf_counter() - start_time) * 1000 
-        answer = response.choices[0].message.content.strip()
+
+        #return empty string incase the model outputs None
+        answer = (response.choices[0].message.content or "").strip()
         usage = response.usage
 
         return {
@@ -139,7 +134,7 @@ def  judge_model_answer(
 
     try:
         resp = client.chat.completions.create(
-            model = "gpt-4o",
+            model = "openai/gpt-4o-mini",
             messages =  [{
                 "role": "user",
                 "content": JUDGE_PROMPT.format(
@@ -163,69 +158,83 @@ def  judge_model_answer(
 
 """This function is to run the entire benchmark pipeline"""
 def run_full_benchmark(
-    models: list = BENCHMARK_MODELS,
-    test_case_path: str = "golden.json",
+    models_dict: dict = BENCHMARK_MODELS, #adjusting the list into dictionary
+    test_case_path: str = "golden_set.json",
 ):
     with open(test_case_path, "r", encoding = "utf-8") as f:
         test_cases = json.load(f)
 
     print(f"Loading {len(test_cases)} test cases and retrieving RAG contexts...")
     test_data = []
-    for case in test_cases:
-        q = case["question"]
-        chunks = hybrid_search(q, top_k=5)
-        ctx = build_prompt_context(chunks)
-        test_data.append({
-            "id": case.get("id"),
-            "question": q,
-            "context": ctx,
-        })
 
-        #Create a dictionary of empty list where ids are the models' names
-        results_by_model = {m: [] for m in models}
+    cache_path = "rag_context_cache.json"
+    if os.path.exists(cache_path):
+        print(f"Loading from cached RAG context from '{cache_path}...'")
+        with open(cache_path, "r", encoding = 'utf-8') as f:
+            test_data = json.load(f)
+    else: 
+        print(f"Fetching RAG context from database")
+        for idx, case in enumerate(test_cases, 1):
+            if idx == 1 or idx % 2 == 1 or idx == len(test_cases):
+                print(f"  Fetching RAG context for question [{idx}/{len(test_cases)}]...")
+            q = case["question"]
+            chunks = hybrid_search(q, top_k=5)
+            ctx = build_prompt_context(chunks)
+            test_data.append({
+                "id": case.get("id"),
+                "question": q,
+                "context": ctx,
+            })
+        with open(cache_path, "w", encoding = 'utf-8') as  f:
+            json.dump(test_data, f, indent = 2)
+        print(f"Saved RAG context to '{cache_path}'")
 
-        len_model = len(models)
-        for m_idx, model in enumerate(models, 1): 
-            #Showing the progress of benchmarking
-            print (f"[\n{m_idx}/{len_model}] Evaluating model: {model}")
-            for q_idx, item in enumerate(test_data, 1):
-                inf = run_model_inference(
-                    model, 
-                    item["question"],
-                    item["context"],
-                )
+    #Create a dictionary of empty list where ids are the models' names
+    models_list = list(models_dict.keys())
+    len_model = len(models_list)
+    results_by_model = {m: [] for m in models_list}
 
-                #In case there's an error when gernerating the output
-                if inf["error"]:
-                    print(f" Q{q_idx}: Error ({inf["error"]})")
-                    results_by_model[model].append({
-                        **item,
-                        **inf,
-                        "grade": {
-                            "is_correct": False,
-                            "score": 0,
-                            "hallucinated": False,
-                            "reason": inf["error"],
-                        }
-                    })
-                    continue
+    for m_idx, model in enumerate(models_list, 1): 
+        #Showing the progress of benchmarking
+        print (f"\n[{m_idx}/{len_model}] Evaluating model: {model}")
+        for q_idx, item in enumerate(test_data, 1):
+            inf = run_model_inference(
+                model, 
+                item["question"],
+                item["context"],
+            )
 
-                grade = judge_model_answer(
-                    item["question"],
-                    item["context"],
-                    inf["answer"],
-                )
-
-                print(f" Q{q_idx}: Score = {grade.get('score', 0)} | Correct = {grade.get("is_correct")} | Latency={inf['latency_ms']} ms")
-
+            #In case there's an error when gernerating the output
+            if inf['error']:
+                print(f" Q{q_idx}: Error ({inf['error']})")
                 results_by_model[model].append({
                     **item,
                     **inf,
-                    "grade": grade
+                    "grade": {
+                        "is_correct": False,
+                        "score": 0,
+                        "hallucinated": False,
+                        "reason": inf["error"],
+                    }
                 })
+                continue
 
-                with open("benchmark_results.json", "w", encoding = 'utf-8') as f:
-                    json.dump(results_by_model, f, indent = 2)
+            grade = judge_model_answer(
+                item["question"],
+                item["context"],
+                inf["answer"],
+            )
+
+            print(f" Q{q_idx}: Score = {grade.get('score', 0)} | Correct = {grade.get('is_correct')} | Latency={inf['latency_ms']} ms")
+
+            results_by_model[model].append({
+                **item,
+                **inf,
+                "grade": grade
+            })
+
+            with open("benchmark_results.json", "w", encoding = 'utf-8') as f:
+                json.dump(results_by_model, f, indent = 2)
 
     return results_by_model
 
@@ -233,6 +242,7 @@ def run_full_benchmark(
 def export_benchmark_summary(
     json_path: str = "benchmark_results.json",
     output_csv_path: str = "output/benchmark_summary.csv",
+    pricing_dict: dict = BENCHMARK_MODELS,
 ):
     """In case the json evaluation file doesn't exist"""
     if not os.path.exists(json_path):
@@ -253,9 +263,12 @@ def export_benchmark_summary(
         correct_count = sum(1 for r in records if r.get("grade", {}).get("is_correct"))
         halluc_count = sum(1 for r in records if r.get("grade", {}).get("hallucinated"))
         avg_score = sum(r.get("grade", {}).get("score", 0) for r in records) / total
-        avg_latency = sum(r.get("latency_ms", {}) for r in records) / total
+        avg_latency = sum(r.get("latency_ms", 0) for r in records) / total
         total_prompt_tok = sum(r.get("prompt_tokens", 0) for r in records)
         total_comp_tok = sum(r.get("completion_tokens", 0) for r in records)
+        pricing = pricing_dict.get(model, {"input": 0.5, "output": 1.5})
+        cost_usd = ((total_prompt_tok / int(1e6)) * pricing["input"] + \
+                    (total_comp_tok / int(1e6)) * pricing["output"])
 
         summary.append({
             "model": model,
@@ -266,11 +279,12 @@ def export_benchmark_summary(
             "avg_latency_ms": round(avg_latency, 2),
             "total_prompt_tokens": total_prompt_tok,
             "total_completion_tokens": total_comp_tok,
+            "total_cost_usd": round(cost_usd, 4),
         })
 
     summary_headers = [
         "model", "total_questions", "accuracy_pct", "avg_score",
-        "hallucination_pct", "avg_latency_ms", "total_prompt_tokens", "total_completion_tokens"
+        "hallucination_pct", "avg_latency_ms", "total_prompt_tokens", "total_completion_tokens", "total_cost_usd"
     ]
 
     with open(output_csv_path, "w", newline = "", encoding = 'utf-8') as f:

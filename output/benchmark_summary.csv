@@ -1,0 +1,6 @@
+model,total_questions,accuracy_pct,avg_score,hallucination_pct,avg_latency_ms,total_prompt_tokens,total_completion_tokens,total_cost_usd
+openai/gpt-4o-mini,150,74.67,83.3,24.67,2265.86,251918,10273,0.044
+openai/o3-mini,150,44.0,46.53,10.67,5524.43,245038,61573,0.5405
+anthropic/claude-3-haiku,150,50.67,74.6,49.33,3611.93,293145,31796,0.113
+google/gemini-2.5-flash,150,71.33,83.9,28.67,1966.19,288348,13055,0.0255
+google/gemini-3.5-flash,26,73.08,78.85,26.92,3924.2,56296,10113,0.0097

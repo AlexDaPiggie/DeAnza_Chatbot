@@ -149,27 +149,29 @@ def condense_query_with_history (
             content = content[:200] + "..."
         history_lines.append(f"{role}: {content}")
 
-        history_text = "\n".join (history_lines)
+    history_text = "\n".join (history_lines)
 
-        for model_name in CONDENSER_MODELS:
-            try: 
-                response = client.chat.completions.create(
-                    model = model_name,
-                    messages = [{
-                        "role": "user",
-                        "content": CONDENSE_PROMPT.format(
-                            history_text = history_text, 
-                            question = message,
-                        )
-                    }],
-                    max_tokens = 60,
-                    temperature=0.1,
-                )
-                condense_text = response.choices[0].message.content
-                break
-            
-            except Exception as e:
-                print(f"Condenser model {model_name} is currently not available. Error: {e}")
-                print("Switching to the next model...")
+    #in case all condenser models are unavailable, we assign condensed text to be user's message
+    condense_text = message
+    for model_name in CONDENSER_MODELS:
+        try: 
+            response = client.chat.completions.create(
+                model = model_name,
+                messages = [{
+                    "role": "user",
+                    "content": CONDENSE_PROMPT.format(
+                        history_text = history_text, 
+                        question = message,
+                    )
+                }],
+                max_tokens = 60,
+                temperature=0.1,
+            )
+            condense_text = response.choices[0].message.content
+            break
+        
+        except Exception as e:
+            print(f"Condenser model {model_name} is currently not available. Error: {e}")
+            print("Switching to the next model...")
 
     return condense_text

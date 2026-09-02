@@ -1,6 +1,12 @@
 model,total_questions,accuracy_pct,avg_score,hallucination_pct,avg_latency_ms,total_prompt_tokens,total_completion_tokens,total_cost_usd
 openai/gpt-4o-mini,150,74.67,83.3,24.67,2265.86,251918,10273,0.044
-openai/o3-mini,150,44.0,46.53,10.67,5524.43,245038,61573,0.5405
-anthropic/claude-3-haiku,150,50.67,74.6,49.33,3611.93,293145,31796,0.113
-google/gemini-2.5-flash,150,71.33,83.9,28.67,1966.19,288348,13055,0.0255
-google/gemini-3.5-flash,26,73.08,78.85,26.92,3924.2,56296,10113,0.0097
+google/gemini-2.5-flash,150,71.33,83.9,28.67,1966.19,288348,13055,0.1191
+google/gemini-2.5-flash-lite,150,78.0,82.73,7.33,1359.82,288348,10610,0.0331
+meta-llama/llama-3.3-70b-instruct,150,83.33,87.97,10.67,4128.97,255655,15237,0.0304
+meta-llama/llama-3.2-3b-instruct,150,56.0,64.97,17.33,1470.7,199376,10717,0.0135
+deepseek/deepseek-r1-distill-llama-70b,150,84.67,91.47,10.0,24696.19,259910,65676,0.2605
+deepseek/deepseek-chat,150,83.33,89.17,10.0,10570.43,259971,26725,0.0944
+mistralai/ministral-8b-2512,150,78.67,83.87,12.0,2383.78,289081,26000,0.0473
+qwen/qwen-2.5-72b-instruct,150,84.0,87.23,11.33,6245.45,266426,20283,0.104
+cohere/command-r-08-2024,150,75.33,83.67,15.33,10535.91,274957,25110,0.0563
+microsoft/phi-4,150,84.67,88.73,9.33,3556.14,255328,22763,0.0211

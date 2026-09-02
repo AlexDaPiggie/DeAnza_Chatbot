@@ -18,24 +18,20 @@ client = OpenAI(
 BENCHMARK_MODELS = {
     #openai 
     "openai/gpt-4o-mini": {"input": 0.15, "output": 0.6},
-    "openai/o3-mini": {"input": 1.1, "output": 4.4},
-
-    #anthropic
-    "anthropic/claude-3-haiku": {"input": 0.25, "output": 1.25},
 
     #gemini
-    "google/gemini-2.5-flash": {"input": 0.075, "output": 0.3},
-    "google/gemini-3.5-flash": {"input": 0.10, "output": 0.40},
+    "google/gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
+    "google/gemini-2.5-flash": {"input": 0.3, "output": 2.5},
 
     #llama
-    "meta-llama/llama-3.3-70b-instruct": {"input": 0.35, "output": 0.4},
-    "meta-llama/llama-3.2-3b-instruct": {"input": 0.06, "output": 0.06},
-    "deepseek/deepseek-r1-distill-llama-70b": {"input": 0.23, "output": 0.69},
+    "meta-llama/llama-3.3-70b-instruct": {"input": 0.1, "output": 0.32},
+    "meta-llama/llama-3.2-3b-instruct": {"input": 0.05, "output": 0.33},
+    "deepseek/deepseek-r1-distill-llama-70b": {"input": 0.8, "output": 0.8},
 
     #chinese + cohere + microsoft
-    "deepseek/deepseek-chat": {"input": 0.14, "output": 0.28},
-    "mistralai/ministral-8b-2512": {"input": 0.10, "output": 0.10},
-    "qwen/qwen-2.5-72b-instruct": {"input": 0.35, "output": 0.6},
+    "deepseek/deepseek-chat": {"input": 0.2574, "output": 1.029},
+    "mistralai/ministral-8b-2512": {"input": 0.15, "output": 0.15},
+    "qwen/qwen-2.5-72b-instruct": {"input": 0.36, "output": 0.4},
     "cohere/command-r-08-2024": {"input": 0.15, "output": 0.6},
     "microsoft/phi-4": {"input": 0.07, "output": 0.14},
 }
@@ -163,7 +159,7 @@ def run_full_benchmark(
 ):
     with open(test_case_path, "r", encoding = "utf-8") as f:
         test_cases = json.load(f)
-
+ 
     print(f"Loading {len(test_cases)} test cases and retrieving RAG contexts...")
     test_data = []
 
@@ -189,15 +185,47 @@ def run_full_benchmark(
             json.dump(test_data, f, indent = 2)
         print(f"Saved RAG context to '{cache_path}'")
 
-    #Create a dictionary of empty list where ids are the models' names
+    checkpoint_path = "benchmark_results.json"
+
     models_list = list(models_dict.keys())
     len_model = len(models_list)
-    results_by_model = {m: [] for m in models_list}
+    
+    if os.path.exists(checkpoint_path): 
+        with open (checkpoint_path, "r", encoding = "utf-8") as f:
+            results_by_model = json.load(f)
+
+    else:
+        #Create a dictionary of empty list where ids are the models' names
+        results_by_model = {m: [] for m in models_list}
 
     for m_idx, model in enumerate(models_list, 1): 
+        total_questions = len(test_data)
+        existing_records = results_by_model.get(model, [])
+
+        #Create dictionary saving information by question ids of models that has already been evaluated
+        completed_ids = {
+            r["id"] for r in existing_records if not r.get("error")
+        }
+
+        #Keep the valid completed answer in an active list
+        results_by_model[model] = [
+            r for r in existing_records if r.get("id") in completed_ids
+        ]
+
+        #Skip the model if it has answered all the questions
+        if len(completed_ids) >= total_questions:
+            print(f"Model {model} has been fully evaluated => Skip this model.")
+            continue
+
         #Showing the progress of benchmarking
         print (f"\n[{m_idx}/{len_model}] Evaluating model: {model}")
         for q_idx, item in enumerate(test_data, 1):
+
+            #Skip by ids the questions that has been evaluated 
+            q_id = item["id"] #store the question's id
+            if q_id in completed_ids:
+                continue
+
             inf = run_model_inference(
                 model, 
                 item["question"],
@@ -233,7 +261,7 @@ def run_full_benchmark(
                 "grade": grade
             })
 
-            with open("benchmark_results.json", "w", encoding = 'utf-8') as f:
+            with open(checkpoint_path, "w", encoding = 'utf-8') as f:
                 json.dump(results_by_model, f, indent = 2)
 
     return results_by_model

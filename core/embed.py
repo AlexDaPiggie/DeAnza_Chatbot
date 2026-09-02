@@ -6,9 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True) #override the local env variable with the global env variable
 
-client = OpenAI (api_key=os.getenv("OPENAI_API_KEY"))
-EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
+client = OpenAI (
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 
+EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-smalL")
 def embed_text(text: str):
     """This function is to embed a piece of text into 1,536 numbers vector"""
     clean_text = text.replace ("\n", " ").strip()

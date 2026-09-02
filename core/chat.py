@@ -6,8 +6,18 @@ from core.retrieval import hybrid_search
 
 load_dotenv()
 
-async_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-CHAT_MODEL=os.getenv("CHAT_MODEL", "gpt-4o-mini")
+#Load the list of models from .env
+chat_env = os.getenv("CHAT_MODEL")
+condenser_env = os.getenv("CONDENSER_MODEL")
+
+CHAT_MODELS = [m.strip() for m in chat_env.split(",")]
+CONDENSER_MODELS = [m.strip() for m in condenser_env.split(",")]
+
+#Check available and load the primary models
+async_client = AsyncOpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 SYSTEM_PROMPT = """You are the official De Anza College AI Assistant.
 
 RULES:
@@ -86,20 +96,30 @@ async def stream_chat(
         "content": user_prompt,
     })
 
-    response = await async_client.chat.completions.create(
-        model=CHAT_MODEL,
-        messages=messages,
-        temperature=0.3,
-        stream=True,
-    )
+    for model_name in CHAT_MODELS:
+        try: 
+            response = await async_client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0.3,
+                stream=True,
+            )
+            async for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+            break
 
-    async for chunk in response:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            yield delta
+        except Exception as e:
+            print(f"The primary chat model {model_name} is not available. Error: {e}")
+            print(f"Switching to fallback model...")
+            continue
 
 
-client = OpenAI(api_key=os.getenv("OPENROUTER_API_KEY"))
+client = OpenAI(
+    base_url = "https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 
 CONDENSE_PROMPT = """Given the chat history follow-up question, rewrite the follow-up question into a standalone question that contains all necessary context(course codes, program names, policies) for a search engine
 
@@ -131,24 +151,25 @@ def condense_query_with_history (
 
         history_text = "\n".join (history_lines)
 
-        try: 
-            response = client.chat.completions.create(
-                model = "gpt-4o-mini",
-                messages = [{
-                    "role": "user",
-                    "content": CONDENSE_PROMPT.format(
-                        history_text = history_text, 
-                        question = message,
-                    )
-                }],
-                max_tokens = 60,
-                temperature=0.1,
-            )
-            condensed = response.choices[0].message.content.strip()
+        for model_name in CONDENSER_MODELS:
+            try: 
+                response = client.chat.completions.create(
+                    model = model_name,
+                    messages = [{
+                        "role": "user",
+                        "content": CONDENSE_PROMPT.format(
+                            history_text = history_text, 
+                            question = message,
+                        )
+                    }],
+                    max_tokens = 60,
+                    temperature=0.1,
+                )
+                condense_text = response.choices[0].message.content
+                break
+            
+            except Exception as e:
+                print(f"Condenser model {model_name} is currently not available. Error: {e}")
+                print("Switching to the next model...")
 
-            return condensed if condensed else message
-        
-        except Exception as e:
-            print (f"Query condensation fallback due to error: {e}")
-
-            return message
+    return condense_text

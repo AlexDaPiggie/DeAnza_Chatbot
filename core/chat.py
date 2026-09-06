@@ -136,7 +136,7 @@ async def stream_chat(
                 model=model_name,
                 messages=messages,
                 temperature=0.3,
-                max_tokens = 500,
+                max_tokens = 1024,
                 stream=True,
             )
 

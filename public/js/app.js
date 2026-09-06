@@ -633,3 +633,40 @@ inputForm.addEventListener("submit", async (e) => {
     }
   });
 });
+
+function loadConversationFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const rawHistory = params.get("history");
+  if (!rawHistory) return;
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(rawHistory));
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+    const firstUserMsg = parsed.find((m) => m.role === "user");
+    const chatTitle = firstUserMsg ? summarizeChatTitle(firstUserMsg.content) : "Imported chat";
+
+    const chat = {
+      id: createConversationId(),
+      title: chatTitle,
+      history: parsed.map((m) => ({
+        role: m.role === "bot" ? "assistant" : m.role,
+        content: m.content,
+      })),
+      messages: parsed.map((m) => ({
+        role: m.role === "assistant" ? "bot" : m.role,
+        content: m.content,
+      })),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    state.conversations.unshift(chat);
+    renderConversation(chat);
+  } catch (err) {
+    console.error("Failed to load conversation from URL:", err);
+  }
+}
+
+loadConversationFromURL();
+

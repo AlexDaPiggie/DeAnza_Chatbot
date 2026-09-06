@@ -38,7 +38,7 @@ RULES:
     - Use bullet points (*) on separate lines for requirements, prerequisites, steps, fees, or dates.
     - Use bold text for key terms, course codes, deadlines, and requirements.
     - Separate distinct topics with ### headers.
-7. CITATIONS: Always leave TWO blank lines and end with a separate "### Sources" header. Format each source as a clean clickable bullet markdown link on its own line: `* [Source Title](URL)`. Never attach ### to preceding text.
+7. CITATIONS: If factual information from sources was used, always leave TWO blank lines and end with a separate "### Sources" header. Format each source as a clean clickable bullet markdown link on its own line: `* [Source Title](URL)`. Never attach ### to preceding text. For greetings, pleasantries, or casual chat, do NOT include a Sources section.
 8. MISSING URLs: If the context mentions a form, website, or office but does NOT provide the exact URL, do not try to write a link. Simply state the name of the office or form (e.g. "Use the FAFSA application" instead of "Use the FAFSA available at [link]"). Never output incomplete sentences or blank links.
 
 EXAMPLE INTERACTION:
@@ -66,23 +66,44 @@ def build_prompt_context(chunks: list) -> str:
         parts.append(f"[Document {idx}] (Source: {url}):\n{c.text}")
     return "\n\n---\n\n".join(parts)
 
+GREETING_WORDS = {
+    "hi", "hello", "hey", "helu", "helo", "howdy", "hola", "yo", "sup",
+    "good morning", "good afternoon", "good evening", "greetings", "how are you",
+    "what's up", "whats up"
+}
+
+def is_greeting(text: str) -> bool:
+    cleaned = text.strip().lower().rstrip("!.?,:;~ ")
+    return cleaned in GREETING_WORDS
+
 # Function to create the streaming chat effect
 async def stream_chat(
     message: str, 
     history: List[dict] = None
 ) -> AsyncGenerator[str, None]:
 
-    # Check if this is a known fast prompt without history (bypass database search)
     clean_msg = message.strip()
-    if clean_msg in FAST_PROMPT_CONTEXTS and (not history or len(history) == 0):
+
+    # 1. Check if greeting or casual pleasantry (skip database search entirely)
+    if is_greeting(clean_msg):
+        search_query = clean_msg
+        context_text = ""
+        user_prompt = message
+    # 2. Check if known fast prompt without history (use cached context)
+    elif clean_msg in FAST_PROMPT_CONTEXTS and (not history or len(history) == 0):
         search_query = clean_msg
         context_text = FAST_PROMPT_CONTEXTS[clean_msg]
+        user_prompt = f"""Context from official De Anza sources: {context_text}
+    
+    Student Question: {message}"""
+    # 3. Standard RAG retrieval
     else:
-        # Rewrite the query if follow-up context is present
         search_query = condense_query_with_history(message, history)
-        # Search database using rewritten query
         chunks = hybrid_search(search_query, top_k=5)
         context_text = build_prompt_context(chunks)
+        user_prompt = f"""Context from official De Anza sources: {context_text}
+    
+    Student Question: {message}"""
 
     # Export Retrieval Output Log
     if os.getenv("DEBUG_LOGS", "false") == "true":
@@ -101,7 +122,7 @@ async def stream_chat(
 {search_query}
 
 ## 4. Raw Database Context
-{context_text}
+{context_text if context_text else "*Bypassed search (Greeting)*"}
 """
         with open ("output/retrieval_data.md", "w", encoding = "utf-8") as f:
             f.write(retrieval_content)
@@ -118,12 +139,6 @@ async def stream_chat(
                 "role": h.get("role", "user"),
                 "content": h.get("content", ""),
             })
-
-    # Add the current user message with retrieved context
-    user_prompt = f"""Context from official De Anza sources: {context_text}
-    
-    Student Question: {message}"""
-
 
     messages.append({
         "role": "user",

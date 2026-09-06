@@ -14,11 +14,7 @@ app = FastAPI(title="De Anza AI Chatbot API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # "http://localhost:5500",
-        # "http://127.0.0.1:5500",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",        
-        "https://de-anza-chatbot.vercel.app",
+        "https://dachatbot.com"
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,

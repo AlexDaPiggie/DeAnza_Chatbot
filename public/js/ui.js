@@ -34,7 +34,6 @@ export function appendMessage(container, role, initialText = "") {
 export function updateBotMessage(msgElement, rawText) {
   if (!msgElement) return;
   msgElement.innerHTML = formatMarkdown(rawText);
-  groupSourceLinks(msgElement);
 }
 
 // Keep citation links together so answers are easier to scan.
@@ -85,15 +84,15 @@ export function autoResizeTextarea(textarea, maxHeightRatio = 0.25) {
   textarea.style.height = `${targetHeight}px`;
 }
 
-// Lock the send button while a request is active. The inline stop button
-// handles cancellation instead.
+// Toggle send button between Send (>) and Stop (■) states.
 export function setLoadingState(sendBtn, isLoading) {
   if (sendBtn) {
-    sendBtn.disabled = isLoading;
+    sendBtn.disabled = false;
     sendBtn.setAttribute("aria-busy", String(isLoading));
-    sendBtn.setAttribute("aria-label", isLoading ? "Response in progress" : "Send message");
+    sendBtn.setAttribute("aria-label", isLoading ? "Stop response" : "Send message");
+    sendBtn.classList.toggle("is-stopping", isLoading);
     sendBtn.innerHTML = isLoading
-      ? '<span class="send-icon" aria-hidden="true">...</span>'
+      ? '<span class="stop-icon" aria-hidden="true">■</span>'
       : '<span class="send-icon" aria-hidden="true">&gt;</span>';
   }
 }
@@ -118,4 +117,22 @@ export function switchView(targetViewId) {
       btn.classList.remove("active");
     }
   });
+}
+
+// Quick toast notification popup for user alerts.
+export function showToast(message, duration = 850) {
+  let toast = document.getElementById("app-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "app-toast";
+    toast.className = "app-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("visible");
+
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => {
+    toast.classList.remove("visible");
+  }, duration);
 }

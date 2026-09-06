@@ -3,6 +3,7 @@ from typing import AsyncGenerator, List
 from openai import AsyncOpenAI, OpenAI
 from dotenv import load_dotenv
 from core.retrieval import hybrid_search
+from core.fast_prompts import FAST_PROMPT_CONTEXTS
 
 load_dotenv()
 
@@ -38,8 +39,13 @@ RULES:
     - Use bold text for key terms, course codes, deadlines, and requirements.
     - Separate distinct topics with ### headers.
 7. CITATIONS: Always leave TWO blank lines and end with a separate "### Sources" header. Format each source as a clean clickable bullet markdown link on its own line: `* [Source Title](URL)`. Never attach ### to preceding text.
+8. MISSING URLs: If the context mentions a form, website, or office but does NOT provide the exact URL, do not try to write a link. Simply state the name of the office or form (e.g. "Use the FAFSA application" instead of "Use the FAFSA available at [link]"). Never output incomplete sentences or blank links.
 
-Example response:
+EXAMPLE INTERACTION:
+Student: What are the prerequisites for CIS 22A?
+Assistant:
+Here is the information for CIS 22A:
+
 ### CIS 22A - Beginning Programming Methodologies in C++
 * **Units**: 4.5
 * **Department**: Computer Information Systems
@@ -66,12 +72,40 @@ async def stream_chat(
     history: List[dict] = None
 ) -> AsyncGenerator[str, None]:
 
-    # Rewrite the query if follow-up context is present
-    search_query = condense_query_with_history(message, history)
+    # Check if this is a known fast prompt without history (bypass database search)
+    clean_msg = message.strip()
+    if clean_msg in FAST_PROMPT_CONTEXTS and (not history or len(history) == 0):
+        search_query = clean_msg
+        context_text = FAST_PROMPT_CONTEXTS[clean_msg]
+    else:
+        # Rewrite the query if follow-up context is present
+        search_query = condense_query_with_history(message, history)
+        # Search database using rewritten query
+        chunks = hybrid_search(search_query, top_k=5)
+        context_text = build_prompt_context(chunks)
 
-    # Search database using rewritten query
-    chunks = hybrid_search(search_query, top_k=5)
-    context_text = build_prompt_context(chunks)
+    # Export Retrieval Output Log
+    if os.getenv("DEBUG_LOGS", "false") == "true":
+        os.makedirs("output", exist_ok = True)#create dir
+        history_str = "\n\n".join(f"**{h.get('role', '').capitalize()}**: {h.get('content', '')}" for h in (history or []))
+
+        retrieval_content = f"""# Retrieval Data
+        
+## 1. Original Question
+{message}    
+
+## 2. Injected Chat History
+{history_str if history_str else "*No history for this turn*"}
+
+## 3. Condensed Query
+{search_query}
+
+## 4. Raw Database Context
+{context_text}
+"""
+        with open ("output/retrieval_data.md", "w", encoding = "utf-8") as f:
+            f.write(retrieval_content)
+
 
     # Assemble prompt with system prompt, recent history, and current turn
     messages = [{
@@ -102,12 +136,30 @@ async def stream_chat(
                 model=model_name,
                 messages=messages,
                 temperature=0.3,
+                max_tokens = 500,
                 stream=True,
             )
+
+            #Store the full answer
+            full_response = ""
             async for chunk in response:
                 delta = chunk.choices[0].delta.content
                 if delta:
+                    full_response += delta
                     yield delta
+
+            #Export the full model answer
+            if os.getenv("DEBUG_LOGS", "false") == "true":
+                output_content = f"""# Model Output:
+
+## 1. Model Used
+{model_name}                                
+
+## 2. Raw AI Output
+{full_response}
+        """
+                with open("output/model_output.md", "w", encoding = "utf-8") as f:
+                    f.write(output_content)
             break
 
         except Exception as e:

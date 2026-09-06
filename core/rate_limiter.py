@@ -15,41 +15,50 @@ def get_client_ip(request: Request):
 
     return "127.0.0.1"
 
-"""THis class is to track message timestamps per ip in a dict.
-it automatically prunt old entried older than 60 seconds (1 minute), with limit is 10
-In other words, rate limit is 10 messages / min"""
+"""Tracks message timestamps per device ID or IP in memory.
+Enforces max 5 messages per 60 seconds with a 30-second cooldown penalty."""
 
 class InMemoryRateLimiter:
-    def __init__ (
+    def __init__(
         self, 
-        max_requests: int = 10,
+        max_requests: int = 5,
         window_seconds: int = 60,
+        cooldown_seconds: int = 30,
     ):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
+        self.cooldown_seconds = cooldown_seconds
         self.requests = defaultdict(list)
+        self.cooldowns = {}
 
-    def check(self, ip: str):
+    def check(self, key: str):
         now = time.time()
-        timestamps = self.requests[ip]
 
-        #prune the timestamps that is older than 1 min
+        # 1. Check if user is currently under an active cooldown penalty
+        if key in self.cooldowns:
+            cooldown_end = self.cooldowns[key]
+            if now < cooldown_end:
+                retry_after = int(cooldown_end - now) + 1
+                return False, max(retry_after, 1)
+            else:
+                del self.cooldowns[key]
+
+        # 2. Prune timestamps older than window_seconds
+        timestamps = self.requests[key]
         valid_timestamps = [t for t in timestamps if now - t < self.window_seconds]
-        self.requests[ip] = valid_timestamps
+        self.requests[key] = valid_timestamps
 
-        #check if user exceeded limit
+        # 3. Check if user hit the rate limit
         if len(valid_timestamps) >= self.max_requests:
-            #time left until oldest request expires
-            oldest = valid_timestamps[0]
-            retry_after = int(self.window_seconds - (now - oldest)) + 1
-            return False, max(retry_after, 1)
+            # Place user in cooldown
+            self.cooldowns[key] = now + self.cooldown_seconds
+            return False, self.cooldown_seconds
 
-        #record new request timestamps
-        self.requests[ip].append(now)
-
+        # 4. Allowed: record new request timestamp
+        self.requests[key].append(now)
         return True, 0
 
-chat_limiter = InMemoryRateLimiter(max_requests= 10, window_seconds=60)
+chat_limiter = InMemoryRateLimiter(max_requests=5, window_seconds=60, cooldown_seconds=30)
 
 
         

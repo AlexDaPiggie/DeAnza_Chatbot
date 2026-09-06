@@ -11,7 +11,7 @@ client = OpenAI (
     api_key=os.getenv("OPENROUTER_API_KEY")
 )
 
-EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-smalL")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 def embed_text(text: str):
     """This function is to embed a piece of text into 1,536 numbers vector"""
     clean_text = text.replace ("\n", " ").strip()

@@ -16,6 +16,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5500",
         "http://127.0.0.1:5500",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",        
         "https://de-anza-chatbot.vercel.app",
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
@@ -37,14 +39,15 @@ def health_check():
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest, request: Request):
 
-    #Check ip rate limit
-    ip = get_client_ip(request)
-    allowed, retry_after = chat_limiter.check(ip)
+    # Check rate limit per device ID (fallback to IP if header missing)
+    device_id = request.headers.get("x-device-id")
+    client_key = device_id.strip() if device_id and device_id.strip() else get_client_ip(request)
+    allowed, retry_after = chat_limiter.check(client_key)
 
     if not allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail = f"Rate limit exceeded. You can send 10 messages per minute. Please try again in {retry_after} seconds."
+            detail=f"You're asking questions a bit too fast! Please wait {retry_after} seconds before sending your next message."
         )
 
     #Streaming generator

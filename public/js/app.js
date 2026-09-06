@@ -1,13 +1,14 @@
 // Chat screen wiring: view changes, theme state, prompt clicks, and requests.
-import { streamChat } from "./api.js?v=2";
+import { streamChat } from "./api.js?v=3";
 import {
   appendMessage,
   updateBotMessage,
   autoResizeTextarea,
   scrollToBottom,
   setLoadingState,
-  switchView
-} from "./ui.js?v=2";
+  switchView,
+  showToast
+} from "./ui.js?v=5";
 
 const chatContainer = document.getElementById("chat-container");
 const scrollContainer = document.querySelector(".content-shell");
@@ -42,7 +43,10 @@ const state = {
   isStreaming: false,
   isSubmitting: false,
   allowSubmitOnce: false,
-  activeBotMessage: null
+  activeBotMessage: null,
+  promptHistory: [],
+  historyIndex: -1,
+  isUserScrolledUp: false
 };
 
 function createConversationId() {
@@ -138,6 +142,8 @@ function resetToEmptyChat() {
   clearVisibleMessages();
   state.history = [];
   state.messages = [];
+  state.promptHistory = [];
+  state.historyIndex = -1;
   state.activeConversationId = null;
   state.hasStartedChat = false;
   welcomePanel?.classList.remove("welcome-panel-hidden");
@@ -149,6 +155,10 @@ function renderConversation(chat) {
   clearVisibleMessages();
   state.history = [...chat.history];
   state.messages = [...chat.messages];
+  state.promptHistory = (chat.messages || [])
+    .filter((m) => m.role === "user")
+    .map((m) => m.content);
+  state.historyIndex = -1;
   state.activeConversationId = chat.id;
   state.hasStartedChat = state.messages.length > 0;
 
@@ -170,7 +180,17 @@ function renderConversation(chat) {
 }
 
 function openRecentChat(chatId) {
-  if (isRequestActive()) return;
+  if (isRequestActive()) {
+    if (chatId === state.activeConversationId) {
+      switchView("chat-view");
+      closeMobileMenu();
+      scrollToBottom(scrollContainer);
+      inputBox?.focus();
+      return;
+    }
+    showToast("Please wait for the current response to finish, or stop it before switching chats.");
+    return;
+  }
   syncActiveConversation();
   const chat = state.conversations.find((item) => item.id === chatId);
   if (chat) renderConversation(chat);
@@ -178,6 +198,7 @@ function openRecentChat(chatId) {
 
 function startNewChat() {
   if (isRequestActive()) {
+    showToast("Please wait for the current response to finish, or stop it before starting a new chat.");
     inputBox?.focus();
     return;
   }
@@ -291,19 +312,53 @@ window.addEventListener("resize", () => {
   if (!isMobileMenuLayout()) closeMobileMenu();
 });
 
-function initScrollTopButton() {
-  if (!scrollContainer || !scrollTopBtn) return;
+function initScrollTracking() {
+  if (!scrollContainer) return;
 
-  scrollContainer.addEventListener("scroll", () => {
-    scrollTopBtn.classList.toggle("visible", scrollContainer.scrollTop > 360);
+  // Instantly catch user scrolling up with mouse wheel or trackpad
+  scrollContainer.addEventListener("wheel", (e) => {
+    if (e.deltaY < -4) {
+      state.isUserScrolledUp = true;
+    }
   }, { passive: true });
 
-  scrollTopBtn.addEventListener("click", () => {
+  // Instantly catch user scrolling up with touch gestures
+  let touchStartY = 0;
+  scrollContainer.addEventListener("touchstart", (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  scrollContainer.addEventListener("touchmove", (e) => {
+    if (e.touches && e.touches[0]) {
+      const touchY = e.touches[0].clientY;
+      if (touchY - touchStartY > 10) {
+        state.isUserScrolledUp = true;
+      }
+    }
+  }, { passive: true });
+
+  // Monitor scroll position to resume auto-scroll when user reaches bottom
+  scrollContainer.addEventListener("scroll", () => {
+    if (scrollTopBtn) {
+      scrollTopBtn.classList.toggle("visible", scrollContainer.scrollTop > 360);
+    }
+    const distanceFromBottom =
+      scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+
+    // Resume auto-scroll when user scrolls back within 20px of the bottom
+    if (distanceFromBottom <= 20) {
+      state.isUserScrolledUp = false;
+    }
+  }, { passive: true });
+
+  scrollTopBtn?.addEventListener("click", () => {
     scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
   });
 }
 
-initScrollTopButton();
+initScrollTracking();
 
 function getModePlaceholder(tab) {
   const isMobile = window.matchMedia("(max-width: 640px)").matches;
@@ -376,43 +431,28 @@ function clearRequestLock() {
   setRequestLock(false);
 }
 
-function removeStopButton(botMsgElement = state.activeBotMessage) {
-  const row = botMsgElement?.parentElement;
-  row?.querySelector(".stop-response-btn")?.remove();
-  row?.classList.remove("is-loading");
-}
-
 function stopActiveResponse() {
-  if (!state.isStreaming) return;
+  if (!isRequestActive()) return;
 
   const activeMessage = state.activeBotMessage;
   state.abortController?.abort();
 
-  removeStopButton(activeMessage);
   clearRequestLock();
 
-  if (activeMessage?.textContent.includes("Searching official De Anza sources")) {
+  if (activeMessage && (activeMessage.textContent.includes("Searching official De Anza sources") || !activeMessage.textContent.trim())) {
     updateBotMessage(activeMessage, "Stopped.");
   }
 
-  inputBox.focus();
+  inputBox?.focus();
 }
 
-function attachStopButton(botMsgElement) {
-  const row = botMsgElement?.parentElement;
-  if (!row || row.querySelector(".stop-response-btn")) return;
-
-  row.classList.add("is-loading");
-
-  const stopBtn = document.createElement("button");
-  stopBtn.type = "button";
-  stopBtn.className = "stop-response-btn";
-  stopBtn.innerHTML = '<span aria-hidden="true">■</span>';
-  stopBtn.setAttribute("aria-label", "Stop response");
-  stopBtn.addEventListener("click", stopActiveResponse);
-
-  row.appendChild(stopBtn);
-}
+sendBtn?.addEventListener("click", (e) => {
+  if (isRequestActive()) {
+    e.preventDefault();
+    e.stopPropagation();
+    stopActiveResponse();
+  }
+});
 
 navBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -474,6 +514,39 @@ inputBox.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (isRequestActive()) return;
     inputForm.requestSubmit();
+    return;
+  }
+
+  if (e.key === "ArrowUp") {
+    if (!state.promptHistory.length) return;
+    if (state.historyIndex === -1 && inputBox.value !== "") return;
+
+    e.preventDefault();
+    if (state.historyIndex === -1) {
+      state.historyIndex = state.promptHistory.length - 1;
+    } else if (state.historyIndex > 0) {
+      state.historyIndex -= 1;
+    }
+
+    inputBox.value = state.promptHistory[state.historyIndex] || "";
+    autoResizeTextarea(inputBox);
+    return;
+  }
+
+  if (e.key === "ArrowDown") {
+    if (state.historyIndex === -1) return;
+
+    e.preventDefault();
+    if (state.historyIndex < state.promptHistory.length - 1) {
+      state.historyIndex += 1;
+      inputBox.value = state.promptHistory[state.historyIndex];
+    } else {
+      state.historyIndex = -1;
+      inputBox.value = "";
+    }
+
+    autoResizeTextarea(inputBox);
+    return;
   }
 });
 
@@ -505,7 +578,12 @@ inputForm.addEventListener("submit", async (e) => {
   markChatStarted();
   appendMessage(chatContainer, "user", query);
   state.messages.push({ role: "user", content: query });
+  if (!state.promptHistory.length || state.promptHistory[state.promptHistory.length - 1] !== query) {
+    state.promptHistory.push(query);
+  }
+  state.historyIndex = -1;
   syncActiveConversation();
+  state.isUserScrolledUp = false;
   scrollToBottom(scrollContainer);
   inputBox.value = "";
   inputBox.style.height = "44px";
@@ -515,7 +593,6 @@ inputForm.addEventListener("submit", async (e) => {
 
   const botMsgElement = appendMessage(chatContainer, "bot", "__THINKING__");
   state.activeBotMessage = botMsgElement;
-  attachStopButton(botMsgElement);
   scrollToBottom(scrollContainer);
   let fullResponse = "";
 
@@ -526,11 +603,11 @@ inputForm.addEventListener("submit", async (e) => {
     onToken: (token) => {
       fullResponse += token;
       updateBotMessage(botMsgElement, fullResponse);
-      attachStopButton(botMsgElement);
-      scrollToBottom(scrollContainer);
+      if (!state.isUserScrolledUp) {
+        scrollToBottom(scrollContainer);
+      }
     },
     onDone: () => {
-      removeStopButton(botMsgElement);
       if (fullResponse.trim()) {
         state.history.push({ role: "user", content: query });
         state.history.push({ role: "assistant", content: fullResponse });
@@ -546,8 +623,7 @@ inputForm.addEventListener("submit", async (e) => {
       inputBox.focus();
     },
     onError: (err) => {
-      removeStopButton(botMsgElement);
-      const errorText = "Sorry, I hit a connection issue while reaching the assistant. Please try again.";
+      const errorText = err?.message || "Sorry, I hit a connection issue while reaching the assistant. Please try again.";
       updateBotMessage(botMsgElement, errorText);
       state.messages.push({ role: "bot", content: errorText });
       syncActiveConversation();

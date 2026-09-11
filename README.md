@@ -159,6 +159,18 @@ Compares total token consumption and API expenditures across all 150 benchmark t
 * **Cost Leaders**: `meta-llama/llama-3.2-3b-instruct` ($0.011 for 150 queries) and `mistralai/mistral-small-24b-instruct-2501` ($0.022 for 150 queries) proved exceptionally economical.
 * **Production Balance**: `gemini-2.5-flash-lite` ($0.038 total) and `gpt-4o-mini` ($0.062 total) delivered ideal balances between sub-second TTFT and low operational costs.
 
+### 3. Latency & Markdown Formatting Quality
+
+Evaluates Time To First Token (TTFT), total response latency, and markdown formatting adherence across all models.
+
+<p align="center">
+  <img src="output/estimated_md_pass_tfft_latency.png" alt="Markdown Pass Rate, TTFT, and Latency across Models" width="90%"/>
+</p>
+
+* **Speed Champions**: `google/gemini-2.5-flash` (925ms TTFT, 1.89s latency) and `gemini-2.5-flash-lite` (1001ms TTFT, 1.59s latency) yielded the fastest real-time streaming experiences.
+* **Formatting Reliability**: `mistralai/ministral-8b-2512` (100% pass rate) and `openai/gpt-4o-mini` (97.3% pass rate) excelled in AST markdown structure compliance.
+* **Reasoning Latency Tradeoff**: Deep reasoning models like `deepseek-r1-distill-llama-70b` produced high token volumes and reasoning chains, resulting in substantially higher latency unsuitable for interactive chat.
+
 ---
 
 ## Model Sequencing & Fallback Architecture

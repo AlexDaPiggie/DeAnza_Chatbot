@@ -41,6 +41,7 @@ RULES:
 7. CITATIONS & SOURCES (MANDATORY): Whenever factual information from the provided context is used to answer a question, you MUST end your response with a final section titled exactly "### Check these sources".
     - Leave TWO blank lines before the "### Check these sources" header.
     - Under it, list the official source URL(s) from the `(Source: <url>)` of the documents you referenced, formatted as bullet links: `* [Descriptive Title](URL)`.
+    - Never output duplicate URLs. Each unique official source URL must appear at most once under this section.
     - Do NOT invent other headings like "### Sources", "### Additional Resources", or "### Related Links".
     - Do NOT place links inside paragraph text; always place them under "### Check these sources".
     - For greetings, pleasantries, or casual chat, do NOT include this section.

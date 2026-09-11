@@ -66,9 +66,19 @@ export function groupSourceLinks(msgElement) {
   list.className = "source-list";
   group.appendChild(list);
 
+  const seenUrls = new Set();
+
   links.forEach((link) => {
     const parent = link.parentElement;
-    list.appendChild(link);
+    const rawHref = (link.getAttribute("href") || "").trim().toLowerCase().replace(/\/+$/, "");
+
+    if (rawHref && seenUrls.has(rawHref)) {
+      link.remove();
+    } else {
+      if (rawHref) seenUrls.add(rawHref);
+      list.appendChild(link);
+    }
+
     if (parent && parent !== msgElement && !parent.textContent.trim() && parent.children.length === 0) {
       parent.remove();
     }

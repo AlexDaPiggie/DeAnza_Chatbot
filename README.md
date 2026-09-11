@@ -1,14 +1,5 @@
 # [De Anza AI Chatbot (Click to see the Website)](https://dachatbot.com)
 
-## About
-- An end-to-end AI assistant built specifically for De Anza College students to get instant, accurate answers about campus academics, admissions, transfer rules, and student life.
-- Grounded strictly in official De Anza College web pages, course catalogs, class schedules, articulation agreements, and campus policies to eliminate hallucinations.
-- Powered by a Hybrid Retrieval-Augmented Generation (RAG) pipeline combining dense semantic vector search with BM25 lexical search, supported by fast-prompt context caching.
-- Features real-time Server-Sent Events (SSE) streaming with live status indicators, device-level rate limiting, and clickable citations under a dedicated "Check these sources" section.
-- Backed by an automated 12-model benchmarking harness evaluated on a 150-question golden dataset for accuracy, hallucination rate, AST markdown validity, Time To First Token (TTFT), latency, and token cost.
-
----
-
 ## Authors
 
 | **Phong Nguyen (Alex)** | **Huy Phan (Hertzy)** |
@@ -16,6 +7,15 @@
 | **AI Engineering & Backend Architecture** | **Frontend Engineering & UI/UX Design** |
 | Engineered the end-to-end RAG retrieval pipeline (BM25 + ChromaDB semantic search), multi-model OpenRouter LLM orchestration and fallback engine, automated benchmark harness, query condenser, rate limiter, and FastAPI backend services. | Designed and developed the responsive single-page chat interface (HTML5, CSS3, Vanilla ES6+ JavaScript), real-time SSE stream renderer, dynamic markdown formatter, citation groupers, light/dark theme system, and local conversation persistence. |
 | GitHub: [@AlexDaPiggie](https://github.com/AlexDaPiggie)<br>LinkedIn: [Hoai Phong Nguyen](https://www.linkedin.com/in/hoai-phong-nguyen-9367a4384/) | GitHub: [@hertzy-da-poet](https://github.com/hertzy-da-poet)<br>Portfolio: [Huy Phan Portfolio](https://hertzy-da-poet.github.io/Hugo-Portfolio/) |
+
+---
+
+## About
+- An end-to-end AI assistant built specifically for De Anza College students to get instant, accurate answers about campus academics, admissions, transfer rules, and student life.
+- Grounded strictly in official De Anza College web pages, course catalogs, class schedules, articulation agreements, and campus policies to eliminate hallucinations.
+- Powered by a Hybrid Retrieval-Augmented Generation (RAG) pipeline combining dense semantic vector search with BM25 lexical search, supported by fast-prompt context caching.
+- Features real-time Server-Sent Events (SSE) streaming with live status indicators, device-level rate limiting, and clickable citations under a dedicated "Check these sources" section.
+- Backed by an automated 12-model benchmarking harness evaluated on a 150-question golden dataset for accuracy, hallucination rate, AST markdown validity, Time To First Token (TTFT), latency, and token cost.
 
 ---
 

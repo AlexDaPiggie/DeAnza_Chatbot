@@ -6,7 +6,7 @@
 |:---|:---|
 | **AI Engineering & Backend Architecture** | **Frontend Engineering & UI/UX Design** |
 | Engineered the end-to-end RAG retrieval pipeline (BM25 + ChromaDB semantic search), multi-model OpenRouter LLM orchestration and fallback engine, automated benchmark harness, query condenser, rate limiter, and FastAPI backend services. | Designed and developed the responsive single-page chat interface (HTML5, CSS3, Vanilla ES6+ JavaScript), real-time SSE stream renderer, dynamic markdown formatter, citation groupers, light/dark theme system, and local conversation persistence. |
-| GitHub: [@AlexDaPiggie](https://github.com/AlexDaPiggie)<br>LinkedIn: [Hoai Phong Nguyen](https://www.linkedin.com/in/hoai-phong-nguyen-9367a4384/) | GitHub: [@hertzy-da-poet](https://github.com/hertzy-da-poet)<br>Portfolio: [Huy Phan Portfolio](https://hertzy-da-poet.github.io/Hugo-Portfolio/) |
+| GitHub: [@AlexDaPiggie](https://github.com/AlexDaPiggie)<br>LinkedIn: [Hoai Phong Nguyen](https://www.linkedin.com/in/hoai-phong-nguyen-9367a4384/)<br>Portfolio: [Phong Nguyen](https://phongnguyen.vercel.app/) | GitHub: [@hertzy-da-poet](https://github.com/hertzy-da-poet)<br>Portfolio: [Huy Phan Portfolio](https://hertzy-da-poet.github.io/Hugo-Portfolio/) |
 
 ---
 
@@ -64,12 +64,12 @@ flowchart TD
     Formatter --> RenderedMsg["Rendered Answer + Check these sources"]
 ```
 
-1. **Intake & Rate Limiting (`main.py` + `rate_limiter.py`)**: Receives request payload, checks device ID and client IP against the sliding window rate limiter.
-2. **Context Resolution (`chat.py` + `fast_prompts.py`)**: Checks if the query matches curated fast prompts to serve verified context instantly; otherwise triggers query condensation.
-3. **Hybrid Search (`retrieval.py`)**: Searches the indexed De Anza knowledge base using BM25 for keyword accuracy and ChromaDB for semantic intent, fusing results into a prompt context.
-4. **Prompt Assembly & Guardrails (`chat.py`)**: Injects strict formatting rules, recent conversation turns, and verified context with source URLs.
+1. **Intake & Rate Limiting ([`main.py`](main.py) + [`rate_limiter.py`](core/rate_limiter.py))**: Receives request payload, checks device ID and client IP against the sliding window rate limiter.
+2. **Context Resolution ([`chat.py`](core/chat.py) + [`fast_prompts.py`](core/fast_prompts.py))**: Checks if the query matches curated fast prompts to serve verified context instantly; otherwise triggers query condensation.
+3. **Hybrid Search ([`retrieval.py`](core/retrieval.py))**: Searches the indexed De Anza knowledge base using BM25 for keyword accuracy and ChromaDB for semantic intent, fusing results into a prompt context.
+4. **Prompt Assembly & Guardrails ([`chat.py`](core/chat.py))**: Injects strict formatting rules, recent conversation turns, and verified context with source URLs.
 5. **Model Orchestration & Fallback**: Dispatches streaming chat completion to OpenRouter. If the primary model fails or times out, the system automatically falls back to secondary models.
-6. **Live Streaming & Rendering (`app.js` + `config.js`)**: Streams tokens to the client over SSE, sanitizes headings and lists, and groups citation links.
+6. **Live Streaming & Rendering ([`app.js`](public/js/app.js) + [`config.js`](public/js/config.js))**: Streams tokens to the client over SSE, sanitizes headings and lists, and groups citation links.
 
 ---
 

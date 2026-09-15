@@ -100,6 +100,11 @@ def sanitize_database_urls():
                 SET source_url = 'https://www.deanza.edu/financialaid/'
                 WHERE source_url ILIKE '%financialaid/funding-dates%';
             """)
+            cur.execute("""
+                UPDATE chunks 
+                SET source_url = 'https://www.deanza.edu/catalog/' || source_url
+                WHERE source_url ~ '^20[0-9]{2}-20[0-9]{2}/';
+            """)
         conn.commit()
     print("Database chunks sanitized: legacy MyPortal and invalid URLs updated.")
 

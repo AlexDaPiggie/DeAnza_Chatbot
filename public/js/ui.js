@@ -72,7 +72,9 @@ export function groupSourceLinks(msgElement) {
     const parent = link.parentElement;
     const rawHref = (link.getAttribute("href") || "").trim().toLowerCase().replace(/\/+$/, "");
 
-    if (!rawHref || rawHref === "#" || seenUrls.has(rawHref)) {
+    // Exclude empty, hash, chatbot domain self-links, or duplicates
+    const isSelfLink = rawHref.includes("dachatbot.com") || rawHref === window.location.origin.toLowerCase().replace(/\/+$/, "");
+    if (!rawHref || rawHref === "#" || isSelfLink || seenUrls.has(rawHref)) {
       link.remove();
     } else {
       seenUrls.add(rawHref);

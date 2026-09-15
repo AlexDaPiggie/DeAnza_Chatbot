@@ -42,6 +42,15 @@ function normalizeUrl(href = "") {
     return "https://www.deanza.edu/financialaid/";
   }
 
+  // Normalize relative catalog paths like 2025-2026/refund-of-fees
+  if (/^20\d\d-20\d\d\//.test(url)) {
+    return `https://www.deanza.edu/catalog/${url}`;
+  }
+
+  if (/^\/?catalog\//i.test(url)) {
+    return `https://www.deanza.edu/${url.replace(/^\/+/, "")}`;
+  }
+
   return url;
 }
 
@@ -50,12 +59,12 @@ function safeHref(href = "") {
 
   // Validate allowed protocols
   if (/^mailto:/i.test(value)) return escapeHtml(value);
-  if (!/^https?:\/\//i.test(value)) return "#";
+  if (!/^https?:\/\//i.test(value)) return "";
 
   // Allowed official domains
   const isAllowedDomain = /^(https?:\/\/)?([a-zA-Z0-9.-]+\.)?(deanza\.edu|fhda\.edu|elluciancloud\.com|elumenapp\.com|assist\.org|studentforms\.com|studentaid\.gov|fafsa\.gov|csac\.ca\.gov|cccco\.edu)/i.test(value);
   if (!isAllowedDomain) {
-    return "#";
+    return "";
   }
 
   return escapeHtml(value);
@@ -71,8 +80,8 @@ if (window.marked) {
         const text = typeof token === "object" && token !== null ? token.text : textArg;
         const finalUrl = safeHref(href);
 
-        // If unverified URL stripped to "#", render clean text without broken link
-        if (finalUrl === "#") {
+        // If unverified URL stripped to "" or "#", render clean text without broken link
+        if (!finalUrl || finalUrl === "#") {
           return escapeHtml(text);
         }
 

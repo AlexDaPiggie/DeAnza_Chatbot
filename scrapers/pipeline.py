@@ -48,6 +48,13 @@ def run_pipeline():
     for dp in deanza_web_pages:
         raw_chunks.extend(chunk_page(dp))
 
+    # Sanitize legacy URLs from scraped text
+    for ch in raw_chunks:
+        if "myportal.deanza.edu" in ch.chunk_text.lower():
+            ch.chunk_text = ch.chunk_text.replace("https://myportal.deanza.edu", "https://experience.elluciancloud.com/fdaccdso/")
+            ch.chunk_text = ch.chunk_text.replace("http://myportal.deanza.edu", "https://experience.elluciancloud.com/fdaccdso/")
+            ch.chunk_text = ch.chunk_text.replace("myportal.deanza.edu", "experience.elluciancloud.com/fdaccdso/")
+
     unique_chunks = {}
     for ch in raw_chunks:
         unique_chunks[(ch.source_type, ch.doc_id)] = ch

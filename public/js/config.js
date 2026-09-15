@@ -29,10 +29,36 @@ function escapeHtml(value = "") {
     .replace(/'/g, "&#39;");
 }
 
+function normalizeUrl(href = "") {
+  let url = String(href).trim();
+
+  // Rewrite legacy MyPortal links to official Ellucian portal
+  if (/myportal\.deanza\.edu/i.test(url)) {
+    return "https://experience.elluciancloud.com/fdaccdso/";
+  }
+
+  // Rewrite broken funding-dates hallucination to financialaid homepage
+  if (/deanza\.edu\/financialaid\/funding-dates/i.test(url)) {
+    return "https://www.deanza.edu/financialaid/";
+  }
+
+  return url;
+}
+
 function safeHref(href = "") {
-  const value = String(href).trim();
-  if (/^(https?:|mailto:|\/)/i.test(value)) return escapeHtml(value);
-  return "#";
+  const value = normalizeUrl(href);
+
+  // Validate allowed protocols
+  if (/^mailto:/i.test(value)) return escapeHtml(value);
+  if (!/^https?:\/\//i.test(value)) return "#";
+
+  // Allowed official domains
+  const isAllowedDomain = /^(https?:\/\/)?([a-zA-Z0-9.-]+\.)?(deanza\.edu|fhda\.edu|elluciancloud\.com|elumenapp\.com|assist\.org|studentforms\.com|studentaid\.gov|fafsa\.gov|csac\.ca\.gov|cccco\.edu)/i.test(value);
+  if (!isAllowedDomain) {
+    return "#";
+  }
+
+  return escapeHtml(value);
 }
 
 // Keep links safe when markdown comes back from the chatbot.
@@ -43,8 +69,15 @@ if (window.marked) {
         const href = typeof token === "object" && token !== null ? token.href : token;
         const title = typeof token === "object" && token !== null ? token.title : titleArg;
         const text = typeof token === "object" && token !== null ? token.text : textArg;
+        const finalUrl = safeHref(href);
+
+        // If unverified URL stripped to "#", render clean text without broken link
+        if (finalUrl === "#") {
+          return escapeHtml(text);
+        }
+
         const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
-        return `<a href="${safeHref(href)}"${titleAttr} target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+        return `<a href="${finalUrl}"${titleAttr} target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
       }
     }
   });

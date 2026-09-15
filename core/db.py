@@ -76,9 +76,37 @@ def get_db():
     finally:
         p.putconn(conn)
 
+def sanitize_database_urls():
+    """Replace stale legacy URLs (e.g. MyPortal) with modern active endpoints."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE chunks 
+                SET chunk_text = REPLACE(chunk_text, 'https://myportal.deanza.edu', 'https://experience.elluciancloud.com/fdaccdso/')
+                WHERE chunk_text ILIKE '%https://myportal.deanza.edu%';
+            """)
+            cur.execute("""
+                UPDATE chunks 
+                SET chunk_text = REPLACE(chunk_text, 'http://myportal.deanza.edu', 'https://experience.elluciancloud.com/fdaccdso/')
+                WHERE chunk_text ILIKE '%http://myportal.deanza.edu%';
+            """)
+            cur.execute("""
+                UPDATE chunks 
+                SET chunk_text = REPLACE(chunk_text, 'myportal.deanza.edu', 'experience.elluciancloud.com/fdaccdso/')
+                WHERE chunk_text ILIKE '%myportal.deanza.edu%';
+            """)
+            cur.execute("""
+                UPDATE chunks 
+                SET source_url = 'https://www.deanza.edu/financialaid/'
+                WHERE source_url ILIKE '%financialaid/funding-dates%';
+            """)
+        conn.commit()
+    print("Database chunks sanitized: legacy MyPortal and invalid URLs updated.")
+
 def init_db():
     with get_db() as conn:
         conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute(SCHEMA)
+    sanitize_database_urls()
     print ("Database intialized with pgvector, GIN index, and crawl_cache")

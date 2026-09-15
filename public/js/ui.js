@@ -72,10 +72,10 @@ export function groupSourceLinks(msgElement) {
     const parent = link.parentElement;
     const rawHref = (link.getAttribute("href") || "").trim().toLowerCase().replace(/\/+$/, "");
 
-    if (rawHref && seenUrls.has(rawHref)) {
+    if (!rawHref || rawHref === "#" || seenUrls.has(rawHref)) {
       link.remove();
     } else {
-      if (rawHref) seenUrls.add(rawHref);
+      seenUrls.add(rawHref);
       list.appendChild(link);
     }
 
@@ -84,7 +84,9 @@ export function groupSourceLinks(msgElement) {
     }
   });
 
-  msgElement.appendChild(group);
+  if (list.children.length > 0) {
+    msgElement.appendChild(group);
+  }
 }
 
 // Keep the newest message visible during streaming.

@@ -5,7 +5,6 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from core.schemas import ChatRequest
 from core.chat import stream_chat
-from core.db import get_db
 from core.rate_limiter import chat_limiter, get_client_ip
 
 #Initialize the api
@@ -24,12 +23,8 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health_check():
-    with get_db() as conn: 
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1")
     return {
         "status": "ok",
-        "db": "connected",
     }
 
 @app.post("/api/chat")

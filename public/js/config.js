@@ -32,6 +32,9 @@ function escapeHtml(value = "") {
 function normalizeUrl(href = "") {
   let url = String(href).trim();
 
+  // Strip trailing punctuation often accidentally included by LLM
+  url = url.replace(/[.,;:!?)\]]+$/, "");
+
   // Rewrite legacy MyPortal links to official Ellucian portal
   if (/myportal\.deanza\.edu/i.test(url)) {
     return "https://experience.elluciancloud.com/fdaccdso/";
@@ -42,6 +45,11 @@ function normalizeUrl(href = "") {
     return "https://www.deanza.edu/financialaid/";
   }
 
+  // Rewrite fabricated registration subpaths to official apply-and-register or schedule
+  if (/deanza\.edu\/registration\/drop-class/i.test(url) || /deanza\.edu\/registration/i.test(url)) {
+    return "https://www.deanza.edu/apply-and-register/";
+  }
+
   // Normalize relative catalog paths like 2025-2026/refund-of-fees
   if (/^20\d\d-20\d\d\//.test(url)) {
     return `https://www.deanza.edu/catalog/${url}`;
@@ -49,6 +57,11 @@ function normalizeUrl(href = "") {
 
   if (/^\/?catalog\//i.test(url)) {
     return `https://www.deanza.edu/${url.replace(/^\/+/, "")}`;
+  }
+
+  // Fallback for malformed deanza.edu subpages: if it has > 4 path segments or looks broken
+  if (/^https?:\/\/(www\.)?deanza\.edu\/[a-z0-9_-]+\/[a-z0-9_.-]+\/[a-z0-9_.-]+/i.test(url)) {
+    // Keep as is if it's a known valid subpath pattern, else it will still pass domain check
   }
 
   return url;

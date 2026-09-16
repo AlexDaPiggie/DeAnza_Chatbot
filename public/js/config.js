@@ -50,9 +50,18 @@ function normalizeUrl(href = "") {
     return "https://www.deanza.edu/apply-and-register/";
   }
 
-  // Normalize relative catalog paths like 2025-2026/refund-of-fees
+  // Rewrite catalog academic year links to official eLumen catalog
+  if (/^https?:\/\/(www\.)?deanza\.edu\/catalog\/(20\d\d-20\d\d\/.*)$/i.test(url)) {
+    return url.replace(/^https?:\/\/(www\.)?deanza\.edu\/catalog\//i, "https://deanza.elumenapp.com/catalog/");
+  }
+
+  if (/^https?:\/\/(www\.)?deanza\.edu\/catalog\/(course\/.*)$/i.test(url)) {
+    return url.replace(/^https?:\/\/(www\.)?deanza\.edu\/catalog\//i, "https://deanza.elumenapp.com/catalog/");
+  }
+
+  // Normalize relative catalog paths like 2025-2026/guaranteed-admission
   if (/^20\d\d-20\d\d\//.test(url)) {
-    return `https://www.deanza.edu/catalog/${url}`;
+    return `https://deanza.elumenapp.com/catalog/${url}`;
   }
 
   if (/^\/?catalog\//i.test(url)) {

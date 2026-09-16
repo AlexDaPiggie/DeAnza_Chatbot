@@ -102,8 +102,18 @@ def sanitize_database_urls():
             """)
             cur.execute("""
                 UPDATE chunks 
-                SET source_url = 'https://www.deanza.edu/catalog/' || source_url
+                SET source_url = 'https://deanza.elumenapp.com/catalog/' || source_url
                 WHERE source_url ~ '^20[0-9]{2}-20[0-9]{2}/';
+            """)
+            cur.execute("""
+                UPDATE chunks 
+                SET source_url = REPLACE(source_url, 'https://www.deanza.edu/catalog/20', 'https://deanza.elumenapp.com/catalog/20')
+                WHERE source_url ILIKE '%deanza.edu/catalog/20%';
+            """)
+            cur.execute("""
+                UPDATE chunks 
+                SET source_url = REPLACE(source_url, 'https://deanza.edu/catalog/20', 'https://deanza.elumenapp.com/catalog/20')
+                WHERE source_url ILIKE '%deanza.edu/catalog/20%';
             """)
         conn.commit()
     print("Database chunks sanitized: legacy MyPortal and invalid URLs updated.")

@@ -83,7 +83,6 @@
 
 .nav-btn,
 .rail-chip,
-.mode-tab,
 .prompt-card,
 #send-btn,
 .contact-link,
@@ -730,48 +729,6 @@ body[data-theme="dark"] .msg.bot a:hover {
   margin: 0;
 }
 
-.mode-tabs {
-  width: min(100%, 860px);
-  margin: -4px auto 6px;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px;
-  scrollbar-width: none;
-}
-
-.mode-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.mode-tab {
-  flex: 0 0 auto;
-  min-height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0 14px;
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.84rem;
-  font-weight: 650;
-}
-
-.mode-tab:hover,
-.mode-tab.active {
-  transform: translateY(-1px);
-  color: var(--primary);
-  border-color: var(--primary-border);
-  background: var(--primary-light);
-  box-shadow: var(--shadow-sm);
-}
-
-body[data-theme="dark"] .mode-tab:hover,
-body[data-theme="dark"] .mode-tab.active {
-  color: #ff9fbd;
-  border-color: rgba(255, 143, 179, 0.45);
-  background: #321b2a;
-}
 
 #input-form {
   width: min(100%, 880px);
@@ -1405,18 +1362,6 @@ body[data-theme="dark"] .contact-link:hover {
     transform: translate(22px, -50%);
   }
 
-  .mode-tabs {
-    width: 100%;
-    margin: 0 auto 5px;
-    gap: 6px;
-    padding: 2px 0 3px;
-  }
-
-  .mode-tab {
-    min-height: 30px;
-    padding: 0 12px;
-    font-size: 0.78rem;
-  }
 
   #input-form {
     width: 100%;

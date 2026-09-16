@@ -18,7 +18,6 @@ const inputBox = document.getElementById("input-box");
 const sendBtn = document.getElementById("send-btn");
 const navBtns = document.querySelectorAll(".nav-btn");
 const promptBtns = document.querySelectorAll("[data-prompt]");
-const modeTabs = document.querySelectorAll(".mode-tab");
 const welcomePanel = document.querySelector(".welcome-panel");
 const newChatBtn = document.getElementById("new-chat-btn");
 const recentsList = document.getElementById("recents-list");
@@ -417,22 +416,6 @@ function initScrollTracking() {
 
 initScrollTracking();
 
-function getModePlaceholder(tab) {
-  const isMobile = window.matchMedia("(max-width: 640px)").matches;
-  return isMobile && tab.dataset.mobilePlaceholder
-    ? tab.dataset.mobilePlaceholder
-    : tab.dataset.placeholder;
-}
-
-function syncActiveModePlaceholder() {
-  if (!inputBox) return;
-  const activeTab = document.querySelector(".mode-tab.active");
-  const placeholder = activeTab ? getModePlaceholder(activeTab) : "";
-  if (placeholder) inputBox.placeholder = placeholder;
-}
-
-syncActiveModePlaceholder();
-window.addEventListener("resize", syncActiveModePlaceholder);
 
 function submitPrompt(text) {
   if (!inputBox || !inputForm) return;
@@ -572,17 +555,6 @@ promptBtns.forEach((btn) => {
   });
 });
 
-modeTabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    modeTabs.forEach((item) => item.classList.remove("active"));
-    tab.classList.add("active");
-    const placeholder = getModePlaceholder(tab);
-    if (inputBox && placeholder) {
-      inputBox.placeholder = placeholder;
-      inputBox.focus();
-    }
-  });
-});
 
 window.askQuestion = submitPrompt;
 

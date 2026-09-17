@@ -2,7 +2,7 @@
 import { formatMarkdown } from "./config.js";
 
 // Add a message row and return the bubble so streaming updates can reuse it.
-export function appendMessage(container, role, initialText = "") {
+export function appendMessage(container, role, initialText = "", statusText = "Connecting to server...") {
   const row = document.createElement("div");
   row.className = `message-row ${role}`;
 
@@ -16,7 +16,7 @@ export function appendMessage(container, role, initialText = "") {
       msg.innerHTML = `
         <div class="gemini-sparkle-loader">
           <span class="sparkle-symbol" aria-hidden="true">✦</span>
-          <span class="sparkle-text">Searching official De Anza sources...</span>
+          <span class="sparkle-text">${statusText}</span>
         </div>
       `;
     } else {

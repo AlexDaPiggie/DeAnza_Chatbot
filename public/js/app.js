@@ -9,7 +9,7 @@ import {
   setLoadingState,
   switchView,
   showToast
-} from "./ui.js?v=6";
+} from "./ui.js?v=7";
 
 const chatContainer = document.getElementById("chat-container");
 const scrollContainer = document.querySelector(".content-shell");

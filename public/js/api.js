@@ -1,5 +1,5 @@
 // Handles the chat API call and the SSE response stream.
-import { API_ENDPOINTS } from "./config.js?v=2";
+import { API_ENDPOINTS } from "./config.js?v=3";
 
 // Helper to get or generate anonymous persistent Device ID
 function getDeviceId() {

@@ -1,5 +1,5 @@
 // Chat screen wiring: view changes, theme state, prompt clicks, and requests.
-import { streamChat } from "./api.js?v=4";
+import { streamChat } from "./api.js?v=5";
 import {
   appendMessage,
   updateBotMessage,

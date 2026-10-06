@@ -6,12 +6,18 @@ const VERCEL_HOST_SUFFIX = ".vercel.app";
 function getApiOrigin() {
   const { hostname, port } = window.location;
 
-  if (hostname.endsWith(VERCEL_HOST_SUFFIX)) return RENDER_API_ORIGIN;
-  if ((hostname === "localhost" || hostname === "127.0.0.1") && port !== "8000") {
-    return RENDER_API_ORIGIN;
+  // Local development with FastAPI running on port 8000
+  if ((hostname === "localhost" || hostname === "127.0.0.1") && port === "8000") {
+    return "";
   }
 
-  return "";
+  // Served directly by Render backend instance
+  if (hostname === "deanza-chatbot.onrender.com") {
+    return "";
+  }
+
+  // All other hosts (Vercel *.vercel.app, custom domains, local static servers) point to Render backend
+  return RENDER_API_ORIGIN;
 }
 
 const API_ORIGIN = getApiOrigin();

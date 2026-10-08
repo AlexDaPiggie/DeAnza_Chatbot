@@ -13,64 +13,167 @@
 
 
 ## About
-- An end-to-end AI assistant built specifically for De Anza College students to get instant, accurate answers about campus academics, admissions, transfer rules, and student life.
-- Grounded strictly in official De Anza College web pages, course catalogs, class schedules, articulation agreements, and campus policies to eliminate hallucinations.
-- Powered by a Hybrid Retrieval-Augmented Generation (RAG) pipeline combining dense semantic vector search with BM25 lexical search, supported by fast-prompt context caching.
-- Features real-time Server-Sent Events (SSE) streaming with live status indicators, device-level rate limiting, and clickable citations under a dedicated "Check these sources" section.
-- Backed by an automated 12-model benchmarking harness evaluated on a 150-question golden dataset for accuracy, hallucination rate, AST markdown validity, Time To First Token (TTFT), latency, and token cost.
-
----
-
-## Primary Features
-
-- **Hybrid Search RAG Pipeline**: Merges dense semantic embeddings with BM25 keyword matching to accurately capture both conceptual questions and exact course codes (e.g., CIS 22A, MATH 1A).
-- **Fast-Prompt Context Caching**: Provides sub-second responses for frequent campus questions (financial aid, TAG agreements, academic calendar deadlines) by bypassing live vector searches.
-- **Multi-Model Fallback Sequence**: Cascades through configured OpenRouter models to guarantee 99.9% uptime and zero service disruptions if a primary provider experiences downtime.
-- **Strict Anti-Hallucination & Citations**: System prompt strictly enforces factual answers derived only from official college documents, finishing every factual answer with verified markdown links under `### Check these sources`.
-- **Real-Time Token Streaming**: Server-Sent Events (SSE) streaming delivering token-by-token responses with animated loading status updates ("Searching official De Anza sources...", "Preparing answer...").
-- **AST Markdown Validation**: Built-in markdown formatter sanitizes headings, separates glued bullet points, and formats lists without breaking nested sub-bullet indentation.
+- **Student-Focused AI Assistant**: Delivers instant, accurate answers for De Anza College students on courses, prerequisites, financial aid, and transfer planning.
+- **Grounded Hybrid RAG**: Combines BM25 keyword matching and pgvector semantic search strictly grounded in official De Anza catalogs, schedules, and policies to prevent hallucinations.
+- **Fast, Reliable Delivery**: Streams responses in real time with verified source citations, multi-model fallback, and an automated 12-model benchmarking harness.
 
 ---
 
 ## Architecture Pipeline
 
 ```mermaid
-flowchart TD
-    User["Student User"] -->|"Enters Question"| UI["Frontend SPA (HTML/CSS/JS)"]
-    UI -->|"POST /api/chat (SSE)"| API["FastAPI Backend (main.py)"]
-    API --> RateLimit{"Rate Limiter Check"}
-    RateLimit -->|"Limit Exceeded"| HTTP429["429 Too Many Requests"]
-    RateLimit -->|"Allowed"| FastPrompt{"Fast Prompt Cache?"}
-    
-    FastPrompt -->|"Cache Hit"| CachedContext["Pre-Cached Context (fast_prompts.py)"]
-    FastPrompt -->|"Cache Miss"| Condenser["Query Condenser (Chat History)"]
-    
-    Condenser --> Retrieval["Hybrid Retrieval Engine (retrieval.py)"]
-    Retrieval --> BM25["BM25 Lexical Keyword Search"]
-    Retrieval --> Vector["ChromaDB Semantic Vector Search"]
-    BM25 --> RankFusion["Reciprocal Rank Fusion & Assembly"]
-    Vector --> RankFusion
-    
-    RankFusion --> Context["Assembled Document Context"]
-    CachedContext --> Context
-    
-    Context --> Orchestrator["LLM Orchestration (OpenRouter API)"]
-    Orchestrator --> PrimaryModel{"Primary Model"}
-    PrimaryModel -->|"Error / Unavailable"| FallbackModel["Fallback Models Loop"]
-    PrimaryModel -->|"Stream Active"| SSE["Server-Sent Events (SSE) Stream"]
-    FallbackModel -->|"Stream Active"| SSE
-    
-    SSE -->|"Token Stream"| UI
-    UI --> Formatter["Markdown Sanitizer (config.js)"]
-    Formatter --> RenderedMsg["Rendered Answer + Check these sources"]
+flowchart LR
+    User["Student User"] --> UI["Frontend Web App<br/>(HTML / CSS / JS)"]
+    UI -->|"POST /api/chat"| API["FastAPI Backend<br/>(main.py)"]
+    API <-->|"Hybrid Retrieval"| DB[("Neon PostgreSQL<br/>(pgvector + GIN)")]
+    API <-->|"LLM Stream"| LLM["OpenRouter<br/>(Gemini + Fallback Models)"]
+    API -->|"SSE Tokens"| UI
 ```
 
 1. **Intake & Rate Limiting ([`main.py`](main.py) + [`rate_limiter.py`](core/rate_limiter.py))**: Receives request payload, checks device ID and client IP against the sliding window rate limiter.
 2. **Context Resolution ([`chat.py`](core/chat.py) + [`fast_prompts.py`](core/fast_prompts.py))**: Checks if the query matches curated fast prompts to serve verified context instantly; otherwise triggers query condensation.
-3. **Hybrid Search ([`retrieval.py`](core/retrieval.py))**: Searches the indexed De Anza knowledge base using BM25 for keyword accuracy and ChromaDB for semantic intent, fusing results into a prompt context.
+3. **Hybrid Search ([`retrieval.py`](core/retrieval.py))**: Searches the indexed De Anza knowledge base using PostgreSQL full-text search for keyword accuracy and pgvector for semantic intent, fusing results into a prompt context.
 4. **Prompt Assembly & Guardrails ([`chat.py`](core/chat.py))**: Injects strict formatting rules, recent conversation turns, and verified context with source URLs.
 5. **Model Orchestration & Fallback**: Dispatches streaming chat completion to OpenRouter. If the primary model fails or times out, the system automatically falls back to secondary models.
 6. **Live Streaming & Rendering ([`app.js`](public/js/app.js) + [`config.js`](public/js/config.js))**: Streams tokens to the client over SSE, sanitizes headings and lists, and groups citation links.
+
+---
+
+## Database Management
+
+How data is scraped, stored, and indexed. Code lives in [`core/db.py`](core/db.py), [`core/chunking.py`](core/chunking.py), and [`scrapers/`](scrapers/).
+
+### 1. Storage & Schema
+- **Database Engine**: Hosted PostgreSQL instance on Neon with the `pgvector` extension.
+- **Connection Pool**: `psycopg2.pool.ThreadedConnectionPool` (2–10 connections) in [`core/db.py`](core/db.py).
+- **Primary Table (`chunks`)**: Single table storing all document types to keep retrieval unified:
+  - `id`: Unique serial ID.
+  - `source_type`: Data source category (`course`, `catalog`, `schedule`, `web`).
+  - `source_url`: Verifiable link for student citations.
+  - `doc_id`: Unique document slug (e.g., `cis-22a`).
+  - `chunk_text`: Formatted markdown text injected into LLM context.
+  - `embedding`: 1536-dimensional vector (`text-embedding-3-small`).
+  - `tsv`: `tsvector` generated column (`to_tsvector('english', chunk_text)`).
+  - `metadata`: JSONB storing structured fields (`code`, `units`, `crn`, `dept`).
+- **Cache Table (`crawl_cache`)**: Stores `(source_type, doc_id, content_hash)`. Uses SHA-256 to skip unchanged pages during re-indexing and save OpenAI embedding API costs.
+
+### 2. Indexes
+Three distinct indexes support different retrieval paths:
+- **`idx_chunks_hnsw`**: HNSW index on `embedding` (`vector_cosine_ops`) for sub-10ms semantic cosine search.
+- **`idx_chunks_tsv`**: GIN index on `tsv` for English full-text keyword search.
+- **`idx_chunks_source_code`**: B-Tree index on `(metadata->>'code')` for instant exact course lookups (e.g., `CIS 22A`).
+
+### 3. Data Sources & Update Frequency
+- **Course Catalog ([deanza.elumenapp.com](https://deanza.elumenapp.com/catalog))**:
+  - Scraped by [`scrapers/catalog.py`](scrapers/catalog.py).
+  - *Cadence*: **Static (Annual)**. Updated once per academic year.
+- **Academic Policies & Degree Guides**:
+  - Scraped by [`scrapers/pages.py`](scrapers/pages.py).
+  - *Cadence*: **Static (Annual)**. Degree requirements, transfer rules, grading policies.
+- **Class Schedule ([deanza.edu/schedule](https://www.deanza.edu/schedule/))**:
+  - Scraped by [`scrapers/schedule.py`](scrapers/schedule.py).
+  - *Cadence*: **Dynamic (Quarterly/Weekly)**. Active sections, CRNs, meeting times, instructors.
+- **Campus Service Pages ([deanza.edu](https://www.deanza.edu))**:
+  - Scraped by [`scrapers/deanza_web.py`](scrapers/deanza_web.py).
+  - *Cadence*: **Semi-Static (Quarterly)**. Academic calendar deadlines, financial aid, cashier fees, counseling.
+
+### 4. Contributor Guide: Re-indexing & Adding Sources
+- **Run full ingestion pipeline**:
+  ```bash
+  python scrapers/pipeline.py
+  ```
+- **Add a new data source**:
+  1. Add scraper function in [`scrapers/`](scrapers/) that returns structured dicts.
+  2. Add chunking logic in [`core/chunking.py`](core/chunking.py) to convert pages into `Chunk` objects.
+  3. Register the scraper in [`scrapers/pipeline.py`](scrapers/pipeline.py).
+  4. Run `python scrapers/pipeline.py`. Hashes prevent re-embedding unchanged documents.
+
+```mermaid
+flowchart LR
+    subgraph Scraping["Scrapers (scrapers/)"]
+        S1["Catalog"]
+        S2["Schedule"]
+        S3["Web Hubs"]
+    end
+
+    subgraph Pipeline["Ingestion (scrapers/pipeline.py)"]
+        S1 --> P["Parser & Sanitizer"]
+        S2 --> P
+        S3 --> P
+        P --> H{"SHA-256 Changed?"}
+        H -->|"No"| Skip["Skip (crawl_cache)"]
+        H -->|"Yes"| Chunks["Chunking & Embedding"]
+    end
+
+    subgraph DB["PostgreSQL Database (core/db.py)"]
+        Chunks --> T[("chunks Table")]
+        T --> HNSW["HNSW Vector Index"]
+        T --> GIN["GIN Full-Text Index"]
+        T --> BTree["B-Tree Code Index"]
+    end
+```
+
+---
+
+## RAG Pipeline
+
+How queries are processed, retrieved, ranked, and streamed. Code lives in [`core/retrieval.py`](core/retrieval.py) and [`core/chat.py`](core/chat.py).
+
+### 1. Step-by-Step Flow
+- **1. Query Condensation & Fast Cache ([`core/chat.py`](core/chat.py) + [`core/fast_prompts.py`](core/fast_prompts.py))**:
+  - Conversational follow-ups with history are rewritten into standalone questions by an LLM condenser.
+  - Frequent campus topics (financial aid, TAG, Promise) hit pre-cached context and return immediately without querying PostgreSQL.
+- **2. Course Code Extraction & Normalization ([`core/course_codes.py`](core/course_codes.py))**:
+  - Regex detects course codes (`CIS D022A` -> `CIS 22A`).
+  - Direct B-Tree lookup via `exact_course_lookup()`. If matched, pins chunk directly to rank #1.
+- **3. Parallel Hybrid Search ([`core/retrieval.py`](core/retrieval.py))**:
+  - **Dense Semantic Search**: Converts query into a 1536-dimensional vector using OpenAI `text-embedding-3-small`. Uses PostgreSQL `pgvector` cosine operator (`<=>`) over the HNSW index to retrieve the top 30 closest chunks by meaning.
+  - **Sparse Lexical Search**: Runs PostgreSQL full-text search (`plainto_tsquery`) over the GIN index. Uses `ts_rank_cd` to retrieve the top 30 keyword matches ranked by word frequency and proximity.
+- **4. Reciprocal Rank Fusion (RRF)**:
+  - Merges dense and sparse lists using the custom RRF function in [`_rrf_fuse()`](core/retrieval.py):
+    $$\text{RRF}(d) = \sum_{m \in \{\text{dense}, \text{sparse}\}} \frac{1}{k + r_m(d)}$$
+    Where $k = 60$ is a smoothing constant, and $r_m(d) \in [1, 30]$ is the rank of chunk $d$ in retrieval list $m$.
+  - If an exact course code was matched in Step 2, it receives an override score of `1.0` (pinned to rank #1).
+  - Selects the top 5 highest-ranked chunks for final context.
+- **5. Context Assembly & Guardrails ([`core/chat.py`](core/chat.py))**:
+  - Formats top 5 chunks into context blocks labeled with `(Source: <url>)`.
+  - System prompt enforces strict anti-hallucination rules: answer only from provided context, and format links under `### Sources`.
+- **6. Streaming & Model Fallback Cascade ([`core/chat.py`](core/chat.py))**:
+  - Dispatches assembled prompt to OpenRouter using Server-Sent Events (SSE).
+  - Fallback loop: primary model (`gemini-2.5-flash`) -> secondary models (`gpt-4o-mini`, `mistral-small`) if primary times out or returns an error.
+
+
+### 3. End-to-End RAG Lifecycle
+High-level view from student query to streaming response:
+
+```mermaid
+flowchart TD
+    UserQ["Student Query"] --> History{"History Present?"}
+    History -->|"Yes"| Condense["Condense Query (LLM)"]
+    History -->|"No"| RawQ["Direct Query"]
+
+    Condense --> FastCheck{"Fast Prompt Match?"}
+    RawQ --> FastCheck
+
+    FastCheck -->|"Yes"| Cached["Pre-Cached Context"]
+    FastCheck -->|"No"| HybridSearch["Hybrid Search Engine<br/>(core/retrieval.py)"]
+
+    HybridSearch --> TopChunks["Top 5 Fused Chunks"]
+    Cached --> Assembly["Context Assembly<br/>(core/chat.py)"]
+    TopChunks --> Assembly
+
+    Assembly --> LLM{"Primary Model: Gemini 2.5 Flash"}
+    LLM -->|"Fail / Timeout"| Fallback["Fallback Cascade: GPT-4o-mini"]
+    LLM -->|"Success"| Stream["SSE Token Stream"]
+    Fallback -->|"Success"| Stream
+    Stream --> Client["Frontend UI"]
+```
+
+### 4. Contributor Guide: Tuning & Extending RAG
+- **Adjust search weights or top results**: Edit `top_k` in `hybrid_search()` in [`core/retrieval.py`](core/retrieval.py).
+- **Add pre-cached fast answers**: Add question and context to `FAST_PROMPT_CONTEXTS` in [`core/fast_prompts.py`](core/fast_prompts.py).
+- **Change models or fallback sequence**: Edit `CHAT_MODEL` and fallback list in [`core/chat.py`](core/chat.py).
+- **Modify prompt rules or citation style**: Edit `SYSTEM_PROMPT` in [`core/chat.py`](core/chat.py).
 
 ---
 
